@@ -1,3 +1,4 @@
+//家マッチングから選択まで
 import 'package:flutter/material.dart';
 
 void main() {
@@ -61,41 +62,38 @@ class _MainScreenState extends State<MainScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-    
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  i = (i + 1) % pictureBox.length;
-                });
-              },
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(200, 60),
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                textStyle: const TextStyle(fontSize: 18),
-              ),
-              child: const Text('次の画像へ'),
-            ),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  i = (i +pictureBox.length-1 ) % pictureBox.length;
-                });
-              },
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(200, 60),
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                textStyle: const TextStyle(fontSize: 18),
-              ),
-              child: const Text('前の画像へ'),
-            ),
-            
-              ]
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      i = (i + pictureBox.length - 1) % pictureBox.length;
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(200, 60),
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    textStyle: const TextStyle(fontSize: 18),
+                  ),
+                  child: const Text('前の画像へ'),
+                ),
+                const SizedBox(width: 30), // 少しスペースを追加
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      i = (i + 1) % pictureBox.length;
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(200, 60),
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    textStyle: const TextStyle(fontSize: 18),
+                  ),
+                  child: const Text('次の画像へ'),
+                ),
+              ],
             )
           ],
-        
         ),
       ),
     );
@@ -129,24 +127,36 @@ class DetailScreen extends StatelessWidget {
                   fit: BoxFit.cover,
                 ),
                 const SizedBox(height: 16),
-          
                 const Text(
                   'これは説明のテキストです',
                   style: TextStyle(fontSize: 18),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed:() {
-                    print('ここに物件を選択した先の大家との対談を作る');
+                  onPressed: () {
+                    // ここにアラート表示のロジックを追加
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text('確認'),
+                          content: const Text('確定しました'),
+                          actions: <Widget>[
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop(); // アラートを閉じる
+                                Navigator.of(context).pop(); // 詳細画面を閉じて前の画面に戻る
+                              },
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
                   },
-                  child: const Text('botann'),
+                  child: const Text('確定'),
                 ),
-
-
-                
               ],
-              
-              
             ),
           ),
         ),
