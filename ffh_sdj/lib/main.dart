@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'email_verification_screen.dart';
+import 'package:ffh_sdj/user_regist.dart';
 
 
 void main() {
@@ -143,7 +144,7 @@ class SignUpScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => PlayerScreen()),
+                    MaterialPageRoute(builder: (context) => UserRegistrationScreen()),
                   );
                 },
                 style: ElevatedButton.styleFrom(
@@ -535,21 +536,6 @@ class OrnerScreen extends StatelessWidget {
       ),
       body: Center(
         child: Text('これは Orner 用の画面です'),
-      ),
-    );
-  }
-}
-
-
-class PlayerScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Player画面'),
-      ),
-      body: Center(
-        child: Text('これは Player 用の画面です'),
       ),
     );
   }
