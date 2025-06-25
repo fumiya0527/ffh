@@ -24,6 +24,8 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
   List<String> _desiredAreaCategory = [];
   List<String> _desiredConditions = [];
   bool _agreeToTerms = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   final List<String> nationalities = [
     '日本', 'アメリカ', 'イギリス', 'カナダ', 'オーストラリア', '中国', '韓国',
@@ -179,14 +181,38 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                 validator: (val) => !val!.contains('@') ? '正しいメール形式で' : null,
               ),
               TextFormField(
-                obscureText: true,
-                decoration: InputDecoration(labelText: 'パスワード'),
+                decoration: InputDecoration(
+                  labelText: 'パスワード',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
+                ),
+                obscureText: _obscurePassword,
                 onChanged: (val) => _password = val,
                 validator: (val) => val!.length < 6 ? '6文字以上必要です' : null,
               ),
               TextFormField(
-                obscureText: true,
-                decoration: InputDecoration(labelText: 'パスワード（確認）'),
+                decoration: InputDecoration(
+                  labelText: 'パスワード（確認）',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureConfirmPassword = !_obscureConfirmPassword;
+                      });
+                    },
+                  ),
+                ),
+                obscureText: _obscureConfirmPassword,
                 onChanged: (val) => _confirmPassword = val,
                 validator: (val) =>
                     val != _password ? 'パスワードが一致しません' : null,
