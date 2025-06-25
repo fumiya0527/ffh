@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'email_verification_screen.dart';
-import 'package:ffh_sdj/user_regist.dart';
+import 'package:ffh/user_regist.dart';
 
 
 void main() {
