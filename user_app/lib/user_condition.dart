@@ -1,7 +1,7 @@
 
 
 import 'package:flutter/material.dart';
-import 'package:ffh_sdj/areaselector.dart';
+import 'package:ffh/areaselector.dart';
 
 class UserCondition extends StatefulWidget {
   final String name;
