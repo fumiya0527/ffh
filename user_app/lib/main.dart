@@ -527,7 +527,7 @@ class _CodeInputScreenState extends State<CodeInputScreen> {
   }
 }
 
-
+/* ↓↓↓アプリを分ける方向性に変更したためユーザーとオーナー選択画面は削除↓↓↓
 class OrnerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -541,3 +541,4 @@ class OrnerScreen extends StatelessWidget {
     );
   }
 }
+*/
