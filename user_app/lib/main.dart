@@ -527,23 +527,6 @@ class MyApp extends StatelessWidget {
 //   }
 // }
 
-<<<<<<< HEAD
-/* ↓↓↓アプリを分ける方向性に変更したためユーザーとオーナー選択画面は削除↓↓↓
-class OrnerScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Orner画面'),
-      ),
-      body: Center(
-        child: Text('これは Orner 用の画面です'),
-      ),
-    );
-  }
-}
-*/
-=======
 
 // class OrnerScreen extends StatelessWidget {
 //   @override
@@ -558,4 +541,3 @@ class OrnerScreen extends StatelessWidget {
 //     );
 //   }
 // }
->>>>>>> 8671e466f74afdad56319bb496f70e08eead005a
