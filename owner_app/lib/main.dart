@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'オーナー向け物件アプリ',
       theme: ThemeData(
-        primarySwatch: Colors.blueGrey,
+        primarySwatch: Colors.teal,
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.blueGrey,
           foregroundColor: Colors.white,

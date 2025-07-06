@@ -82,7 +82,6 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
   }
 
   void _registerProperty() async {
-    print('--- _registerProperty が呼び出されました ---');
     setState(() {
       _autovalidateForm = true; 
     });
