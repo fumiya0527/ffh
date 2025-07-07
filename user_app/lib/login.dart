@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:ffh/user_regist.dart'; // user_regist.dart をインポート
-import 'package:ffh/email_verification_screen.dart'; // EmailVerificationScreen をインポート
+import 'package:ffh/user_regist.dart';
 
-// LoginChoiceScreen (ログイン選択画面) - UI/UXを大幅に改善
 class LoginChoiceScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -640,7 +638,7 @@ class _CodeInputScreenState extends State<CodeInputScreen> {
   void _verifyCode() {
     final code = _codeController.text.trim();
 
-    if (code == '1111') { // 仮の認証コード
+    if (code == '1221') { // 仮の認証コード
       Navigator.push(
         context,
         MaterialPageRoute(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
 import 'package:intl/intl.dart';
 import 'user_condition.dart';
+import 'terms_of_service.dart'; 
 
 class UserRegistrationScreen extends StatefulWidget {
   @override
@@ -97,6 +98,34 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
     );
   }
 
+  // ★追加: 利用規約をダイアログで表示する関数
+  void _showTermsOfServiceDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('利用規約'),
+          content: SizedBox(
+            width: double.maxFinite, // ダイアログの幅を最大にする
+            height: MediaQuery.of(context).size.height * 0.7, // 画面の高さの70%を使う
+            child: SingleChildScrollView(
+              // 利用規約が長い場合にスクロールできるようにする
+              child: Text(termsOfServiceText), // termsOfService.dart からインポートしたテキスト
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('閉じる'),
+              onPressed: () {
+                Navigator.of(context).pop(); // ダイアログを閉じる
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // アプリ全体で使うメインの色を定義
@@ -158,7 +187,7 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                 TextFormField(
                   decoration: InputDecoration(
                     labelText: '姓', // 日本語のみに短縮
-                    hintText: '例: 山田 (Yamada)',
+                    hintText: '例: 岡本 (Okamoto)',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     prefixIcon: Icon(Icons.person, color: mainColor), // アイコン色もメインカラーに
                     filled: true,
@@ -177,7 +206,7 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                 TextFormField(
                   decoration: InputDecoration(
                     labelText: '名', // 日本語のみに短縮
-                    hintText: '例: 太郎 (Taro)',
+                    hintText: '例: 寿基 (Kazuki)',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     prefixIcon: Icon(Icons.person_outline, color: mainColor), // アイコン色もメインカラーに
                     filled: true,
@@ -602,7 +631,22 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // 利用規約
+                // ★追加: 利用規約を見るボタン
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: () {
+                      _showTermsOfServiceDialog(context); // 利用規約ダイアログ表示関数を呼び出す
+                    },
+                    child: Text(
+                      '利用規約を見る (View Terms and Conditions)',
+                      style: TextStyle(color: secondaryColor, fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                // 利用規約同意チェックボックス
                 CheckboxListTile(
                   title: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
