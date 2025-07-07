@@ -33,7 +33,7 @@ class LoginChoiceScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
-                  'Welcome For foreigner home',
+                  'Welcome For foreign home',
                   style: TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.bold,
@@ -46,7 +46,7 @@ class LoginChoiceScreen extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => SignUpScreen()),
+                      MaterialPageRoute(builder: (context) => UserRegistrationScreen()),
                     );
                   },
                 ),
@@ -70,7 +70,7 @@ class LoginChoiceScreen extends StatelessWidget {
 }
 
 
-
+/* ↓↓↓アプリを分ける方向性に変更したためユーザーとオーナー選択画面は削除↓↓↓
 class SignUpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -169,6 +169,7 @@ class SignUpScreen extends StatelessWidget {
     );
   }
 }
+*/
 
 class LoginScreen extends StatefulWidget {
   @override
