@@ -1,123 +1,235 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'quiz_question.dart'; // QuizQuestionクラスをインポート
+// import 'main.dart'; // MyAppはmain.dartにあるため、ここでは不要（もしmain関数がここにあったら削除）
+// import 'home_screen.dart'; // 例: クイズ完了後の遷移先としてホーム画面を想定
 
-// URLを開くための非同期関数をトップレベルに移動 (変更なし)
+// URLを開くための非同期関数
 Future<void> _launchURL(String urlString) async {
   final Uri url = Uri.parse(urlString);
   if (!await launchUrl(url)) {
     debugPrint('Could not launch $url');
+    // エラーメッセージをユーザーに表示するスナックバーなどを追加することも検討
   }
 }
 
-void main() {
-  runApp(const MyApp());
-}
+// MyApp は main.dart にあるため、ここでは不要です。
+// void main() {
+//   runApp(const MyApp());
+// }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: '画面遷移サンプル',
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-      ),
-      home: const HomeScreen(),
-    );
-  }
-}
-
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+// マナー画面
+class MannerScreen extends StatelessWidget {
+  const MannerScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // アプリ全体で使うメインの色を定義
+    final Color mainBackgroundColor = const Color(0xFFEFF7F6); // やさしい背景色
+    final Color mainColor = Colors.teal[800]!; // 濃いティール
+    final Color secondaryColor = Colors.teal; // 明るいティール
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('マナーについて'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            // Google Drive リンク1を開くボタン
-            ElevatedButton(
-              onPressed: () {
-                _launchURL('https://drive.google.com/file/d/120kXCEsqjI9p9plddjQa1j25sqQY9PTH/view?usp=drive_link');
-              },
-              child: const Text('Google Drive リンク1を開く'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'About Manners',
+              style: TextStyle(fontSize: 14, color: Colors.white70),
             ),
-            const SizedBox(height: 20),
-            // Google Drive リンク2を開くボタン
-            ElevatedButton(
-              onPressed: () {
-                _launchURL('https://drive.google.com/file/d/10TSoY3ldXm72c_Zpwdo9AS_r9t7s2blc/view?usp=drive_link');
-              },
-              child: const Text('Google Drive リンク2を開く'),
-            ),
-            const SizedBox(height: 20),
-            // 次の画面へ遷移するボタン
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SecondScreen()),
-                );
-              },
-              child: const Text('次の画面へ (クイズ)'),
+            const SizedBox(height: 2),
+            const Text(
+              'マナーについて',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ],
+        ),
+        backgroundColor: mainColor,
+        foregroundColor: Colors.white,
+        centerTitle: false,
+        automaticallyImplyLeading: false, // 戻るボタンを非表示にする (登録後必須フローのため)
+      ),
+      body: Container(
+        color: mainBackgroundColor,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Column(
+                  children: [
+                    Text(
+                      'Learn about Japanese living manners',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: Colors.black87.withOpacity(0.8)),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      '日本の生活マナーを学びましょう',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 40),
+
+                // Google Drive リンク1を開くボタン
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      _launchURL('https://drive.google.com/file/d/120kXCEsqjI9p9plddjQa1j25sqQY9PTH/view?usp=drive_link');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: mainColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      elevation: 5,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Open Video 1',
+                          style: TextStyle(fontSize: 14, color: Colors.white70),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          '動画1を見る',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Google Drive リンク2を開くボタン
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      _launchURL('https://drive.google.com/file/d/10TSoY3ldXm72c_Zpwdo9AS_r9t7s2blc/view?usp=drive_link');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: mainColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      elevation: 5,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Open Video 2',
+                          style: TextStyle(fontSize: 14, color: Colors.white70),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          '動画2を見る',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+
+                // 次の画面へ遷移するボタン (クイズ)
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const QuizScreen()), // QuizScreenへ遷移
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: secondaryColor, // サブカラーを使用
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      elevation: 5,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Start Quiz',
+                          style: TextStyle(fontSize: 14, color: Colors.white70),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'クイズをはじめる',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-// SecondScreen の変更
-class SecondScreen extends StatefulWidget {
-  const SecondScreen({super.key});
+// クイズ画面
+class QuizScreen extends StatefulWidget {
+  const QuizScreen({super.key});
 
   @override
-  State<SecondScreen> createState() => _SecondScreenState();
+  State<QuizScreen> createState() => _QuizScreenState();
 }
 
-class _SecondScreenState extends State<SecondScreen> {
+class _QuizScreenState extends State<QuizScreen> {
   // --- クイズデータ ---
   final List<QuizQuestion> _questions = [
     QuizQuestion(
-      questionText: 'Q1: 夜中にしてはいけないことは？',
-      options: ['A) 料理', 'B) 掃除機', 'C) ゲーム'],
-      correctAnswer: 'B) 掃除機',
+      questionText: 'Q1: 夜中にしてはいけないことは？ (What should you not do late at night?)',
+      options: ['A) 料理 (Cooking)', 'B) 掃除機 (Vacuuming)', 'C) ゲーム (Playing games)'],
+      correctAnswer: 'B) 掃除機 (Vacuuming)',
     ),
     QuizQuestion(
-      questionText: 'Q2: ペットを許可なく飼っていいか？',
-      options: ['A) 飼ってはダメ', 'B) 飼っていい'],
-      correctAnswer: 'A) 飼ってはダメ',
+      questionText: 'Q2: ペットを許可なく飼っていいか？ (Is it okay to keep pets without permission?)',
+      options: ['A) 飼ってはダメ (No, you cannot)', 'B) 飼っていい (Yes, you can)'],
+      correctAnswer: 'A) 飼ってはダメ (No, you cannot)',
     ),
     QuizQuestion(
-      questionText: 'Q3: 共有スペースは物を置いたり自由に使っていい？',
-      options: ['A) 正しい', 'B) 間違っている'],
-      correctAnswer: 'B) 間違っている',
+      questionText: 'Q3: 共有スペースは物を置いたり自由に使っていい？ (Is it okay to put things in common spaces or use them freely?)',
+      options: ['A) 正しい (Correct)', 'B) 間違っている (Incorrect)'],
+      correctAnswer: 'B) 間違っている (Incorrect)',
     ),
     QuizQuestion(
-      questionText: 'Q4: 部屋の中でしてはいけないことは？',
-      options: ['A) 読書', 'B) ゲーム', 'C) 楽器演奏'],
-      correctAnswer: 'C) 楽器演奏',
+      questionText: 'Q4: 部屋の中でしてはいけないことは？ (What should you not do inside your room?)',
+      options: ['A) 読書 (Reading)', 'B) ゲーム (Playing games)', 'C) 楽器演奏 (Playing musical instruments)'],
+      correctAnswer: 'C) 楽器演奏 (Playing musical instruments)',
     ),
     QuizQuestion(
-      questionText: 'Q5: 自転車、バイク、車はいつでも持ってもいい？',
-      options: ['A) 良い', 'B) 届け出が必要'],
-      correctAnswer: 'B) 届け出が必要',
+      questionText: 'Q5: 自転車、バイク、車はいつでも持ってもいい？ (Is it okay to own a bicycle, motorcycle, or car at any time?)',
+      options: ['A) 良い (Yes)', 'B) 届け出が必要 (Notification is required)'],
+      correctAnswer: 'B) 届け出が必要 (Notification is required)',
     ),
   ];
 
   int _currentQuestionIndex = 0;
   String? _selectedOption;
   int _score = 0;
-  // ★追加: クイズが終了し、かつ全問正解だったかを示すフラグ
-  bool _isQuizCompletedAndCorrect = false;
+  bool _isQuizCompleted = false; // クイズが終了したかどうかのフラグ
+  bool _isQuizPassed = false; // クイズに合格したかどうかのフラグ（全問正解）
 
   void _nextQuestion() {
     setState(() {
@@ -127,56 +239,137 @@ class _SecondScreenState extends State<SecondScreen> {
 
       if (_currentQuestionIndex < _questions.length - 1) {
         _currentQuestionIndex++;
-        _selectedOption = null;
+        _selectedOption = null; // 次の問題へ進む前に選択肢をリセット
       } else {
         // 全問終了
-        _isQuizCompletedAndCorrect = (_score == _questions.length); // 全問正解か判定
-        _showResult();
+        _isQuizCompleted = true;
+        _isQuizPassed = (_score == _questions.length); // 全問正解か判定
+        _showResultDialog();
       }
     });
   }
 
-  void _showResult() {
+  void _showResultDialog() {
+    // アプリ全体で使うメインの色を定義
+    final Color mainColor = Colors.teal[800]!; // 濃いティール
+
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: false, // ダイアログ外タップで閉じない
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: Text(_isQuizCompletedAndCorrect ? '全問正解！' : 'クイズ結果'),
-          content: Text(_isQuizCompletedAndCorrect
-              ? 'おめでとうございます！全問正解です！'
-              : '残念！5問中 $_score 問正解でした。'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            _isQuizPassed ? '全問正解！ (Perfect Score!)' : 'クイズ結果 (Quiz Result)',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: _isQuizPassed ? mainColor : Colors.red[700],
+              fontWeight: FontWeight.bold,
+              fontSize: 22,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                _isQuizPassed ? Icons.check_circle_outline : Icons.cancel_outlined,
+                color: _isQuizPassed ? mainColor : Colors.red[700],
+                size: 60,
+              ),
+              const SizedBox(height: 15),
+              Text(
+                _isQuizPassed
+                    ? 'おめでとうございます！\n全問正解です！\n(Congratulations! You got all correct!)'
+                    : '残念！\n${_questions.length}問中 $_score 問正解でした。\n(Too bad! You got $_score out of ${_questions.length} correct.)',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
+          actionsAlignment: MainAxisAlignment.center,
           actions: <Widget>[
-            TextButton(
-              child: Text(_isQuizCompletedAndCorrect ? 'クイズを終了する' : '最初のページに戻る'),
-              onPressed: () {
-                Navigator.of(dialogContext).pop(); // ダイアログを閉じる
-                if (_isQuizCompletedAndCorrect) {
-                  // 全問正解の場合、クイズ画面を閉じて、別の状態を表示するためにsetState
-                  // ここでは画面遷移ではなく、同じSecondScreen内のUIを切り替えるため、
-                  // あえてNavigator.pop()でSecondScreenを閉じず、状態を変更する
-                  setState(() {
-                    // 何もしないか、あるいはQuizScreen内のUIを全問正解表示に切り替えるフラグを設定
-                  });
-                } else {
-                  // 不正解の場合、最初のページに戻る
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                }
-              },
-            ),
-            // 再挑戦ボタン
-            TextButton(
-              child: const Text('もう一度プレイ'),
-              onPressed: () {
-                Navigator.of(dialogContext).pop(); // ダイアログを閉じる
-                setState(() {
-                  _currentQuestionIndex = 0;
-                  _score = 0;
-                  _selectedOption = null;
-                  _isQuizCompletedAndCorrect = false; // フラグもリセット
-                });
-              },
-            ),
+            // クイズ完了後のボタン
+            if (_isQuizPassed)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: mainColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    elevation: 5,
+                  ),
+                  child: Column(
+                    children: [
+                      Text('Start App', style: TextStyle(fontSize: 14, color: Colors.white70)),
+                      const SizedBox(height: 2),
+                      const Text('アプリをはじめる', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop(); // ダイアログを閉じる
+                    // アプリのメインコンテンツへ遷移（例: 物件検索ホーム画面）
+                    // ここでは、StartScreenまで戻ることで、アプリの初期画面に戻るようにします
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                  },
+                ),
+              )
+            else
+              Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: mainColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                        elevation: 5,
+                      ),
+                      child: Column(
+                        children: [
+                          Text('Try Again', style: TextStyle(fontSize: 14, color: Colors.white70)),
+                          const SizedBox(height: 2),
+                          const Text('もう一度プレイ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      onPressed: () {
+                        Navigator.of(dialogContext).pop(); // ダイアログを閉じる
+                        setState(() {
+                          _currentQuestionIndex = 0;
+                          _score = 0;
+                          _selectedOption = null;
+                          _isQuizCompleted = false; // フラグもリセット
+                          _isQuizPassed = false; // フラグもリセット
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: mainColor,
+                        side: BorderSide(color: mainColor),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                        elevation: 0,
+                      ),
+                      child: Column(
+                        children: [
+                          Text('Back to Manners', style: TextStyle(fontSize: 14, color: mainColor.withOpacity(0.8))),
+                          const SizedBox(height: 2),
+                          Text('マナー画面に戻る', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: mainColor)),
+                        ],
+                      ),
+                      onPressed: () {
+                        Navigator.of(dialogContext).pop(); // ダイアログを閉じる
+                        Navigator.of(context).pop(); // クイズ画面を閉じてマナー画面に戻る
+                      },
+                    ),
+                  ),
+                ],
+              ),
           ],
         );
       },
@@ -185,94 +378,143 @@ class _SecondScreenState extends State<SecondScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ★変更: クイズが全問正解で終了した場合のUI
-    if (_isQuizCompletedAndCorrect && _currentQuestionIndex == _questions.length - 1) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('おめでとうございます！'),
-          automaticallyImplyLeading: false, // 戻るボタンを非表示にする
+    // アプリ全体で使うメインの色を定義
+    final Color mainBackgroundColor = const Color(0xFFEFF7F6); // やさしい背景色
+    final Color mainColor = Colors.teal[800]!; // 濃いティール
+    final Color secondaryColor = Colors.teal; // 明るいティール
+
+    final currentQuestion = _questions[_currentQuestionIndex];
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Quiz',
+              style: TextStyle(fontSize: 14, color: Colors.white70),
+            ),
+            const SizedBox(height: 2),
+            const Text(
+              'クイズ',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+          ],
         ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              const Icon(
-                Icons.star,
-                color: Colors.amber,
-                size: 100.0,
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                '全問正解おめでとうございます！',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () {
-                  // 最初のページに戻る
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                },
-                child: const Text('最初のページに戻る'),
-              ),
-            ],
-          ),
-        ),
-      );
-    } else {
-      // 通常のクイズ画面のUI
-      final currentQuestion = _questions[_currentQuestionIndex];
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('クイズ画面'),
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(16.0),
+        backgroundColor: mainColor,
+        foregroundColor: Colors.white,
+        centerTitle: false,
+        automaticallyImplyLeading: false, // 戻るボタンを非表示にする (クイズ中は戻れないように)
+      ),
+      body: Container(
+        color: mainBackgroundColor,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Text(
-                '問題 ${_currentQuestionIndex + 1}/${_questions.length}',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              // 問題数表示
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Question ${_currentQuestionIndex + 1} of ${_questions.length}',
+                      style: TextStyle(fontSize: 14, color: Colors.grey.shade700.withOpacity(0.8)), // ★修正点★
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '問題 ${_currentQuestionIndex + 1}/${_questions.length}',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: mainColor),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 20),
+
+              // 質問文
               Text(
                 currentQuestion.questionText,
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
               ),
               const SizedBox(height: 30),
+
+              // 選択肢
               ...currentQuestion.options.map((option) {
-                return RadioListTile<String>(
-                  title: Text(option, style: const TextStyle(fontSize: 18)),
-                  value: option,
-                  groupValue: _selectedOption,
-                  onChanged: (String? value) {
-                    setState(() {
-                      _selectedOption = value;
-                    });
-                  },
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  elevation: _selectedOption == option ? 4 : 1, // 選択時に影を強調
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    side: BorderSide(
+                      color: _selectedOption == option ? mainColor : Colors.grey.shade300, // 選択時に枠線を強調
+                      width: _selectedOption == option ? 2 : 1,
+                    ),
+                  ),
+                  child: RadioListTile<String>(
+                    title: Text(
+                      option,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: _selectedOption == option ? mainColor : Colors.black87, // 選択時のテキスト色
+                      ),
+                    ),
+                    value: option,
+                    groupValue: _selectedOption,
+                    onChanged: (String? value) {
+                      setState(() {
+                        _selectedOption = value;
+                      });
+                    },
+                    activeColor: mainColor, // ラジオボタンの色
+                  ),
                 );
               }).toList(),
               const Spacer(),
-              ElevatedButton(
-                onPressed: _selectedOption == null
-                    ? null
-                    : _nextQuestion,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  textStyle: const TextStyle(fontSize: 18),
-                ),
-                child: Text(
-                  _currentQuestionIndex < _questions.length - 1
-                      ? '次の問題へ'
-                      : '結果を見る',
+
+              // 次へ/結果を見る ボタン
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  onPressed: _selectedOption == null
+                      ? null
+                      : _nextQuestion,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: mainColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    elevation: 5,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        _currentQuestionIndex < _questions.length - 1
+                            ? 'Next Question'
+                            : 'See Result',
+                        style: TextStyle(fontSize: 14, color: Colors.white70),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _currentQuestionIndex < _questions.length - 1
+                            ? '次の問題へ'
+                            : '結果を見る',
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
             ],
           ),
         ),
-      );
-    }
+      ),
+    );
   }
 }

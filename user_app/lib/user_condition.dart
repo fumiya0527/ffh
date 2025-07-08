@@ -433,7 +433,7 @@ class _UserConditionState extends State<UserCondition> {
                         );
                         // 実際にはここで入力された条件を次の画面に渡すか、APIに送信する
                         // 例: print('Rent Range: ${_currentRentRange.start}-${_currentRentRange.end}');
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen()));
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => MannerScreen()));
                       }
                     },
                     child: Column(
