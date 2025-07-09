@@ -8,98 +8,578 @@ class AreaSelector extends StatefulWidget {
 }
 
 class _AreaSelectorState extends State<AreaSelector> {
-  String? _region;
-  String? _prefecture;
-  String? _city;
+  String? _selectedCity; // 例: 神戸市、姫路市
+  String? _selectedWard; // 例: 中央区、香寺町
+  String? _selectedNeighborhood; // 例: 三宮、駅前町
 
   final List<String> selectedAreas = [];
 
-  final Map<String, Map<String, List<String>>> areaData = {
-    '北海道・東北': {
-      '北海道': ['札幌市', '函館市', '旭川市','その他'],
-      '青森県': ['青森市', '八戸市','その他'],
-      '岩手県': ['盛岡市', '一関市','その他'],
-      '宮城県': ['仙台市', '石巻市','その他'],
-      '秋田県': ['秋田市','その他'],
-      '山形県': ['山形市','その他'],
-      '福島県': ['福島市', '郡山市','その他'],
-    },
-    '北陸': {
-      '富山県': ['富山市', '高岡市','その他'],
-      '石川県': ['金沢市', '小松市','その他'],
-      '福井県': ['福井市', '敦賀市','その他'],
-    },
-    '甲信越': {
-      '新潟県': ['新潟市', '長岡市','その他'],
-      '山梨県': ['甲府市','その他'],
-      '長野県': ['長野市', '松本市','その他'],
-    },
-    '関東': {
-      '東京都': ['千代田区','中央区','港区','新宿区','文京区','台東区','墨田区','江東区',
-                '品川区','目黒区','大田区','世田谷区','渋谷区','中野区','杉並区','豊島区',
-                '北区','荒川区','板橋区','練馬区','足立区','葛飾区','江戸川区','その他市部'],
-      '神奈川県': ['横浜市','川崎市','相模原市','その他'],
-      '埼玉県': ['さいたま市','川越市','その他'],
-      '千葉県': ['千葉市','船橋市','その他'],
-      '茨城県': ['水戸市','つくば市','その他'],
-      '栃木県': ['宇都宮市','その他'],
-      '群馬県': ['前橋市','その他'],
-    },
-    '東海': {
-      '静岡県': ['静岡市','浜松市','その他'],
-      '愛知県': ['名古屋市','豊橋市','その他'],
-      '岐阜県': ['岐阜市','その他'],
-      '三重県': ['津市','四日市市','その他'],
-    },
-    '近畿': {
-      '大阪府': ['大阪市都島区','大阪市福島区','大阪市此花区','大阪市西区','大阪市港区',
-                '大阪市大正区','大阪市天王寺区','大阪市浪速区','大阪市西淀川区','大阪市東淀川区',
-                '大阪市東成区','大阪市生野区','大阪市旭区','大阪市城東区','大阪市淀川区',
-                '大阪市鶴見区','大阪市住之江区','大阪市平野区','大阪市北区','大阪市中央区','堺市','その他'],
-      '京都府': ['京都市','その他'],
-      '兵庫県': ['神戸市', '西宮市','その他'],
-      '奈良県': ['奈良市','その他'],
-      '滋賀県': ['大津市','その他'],
-      '和歌山県': ['和歌山市','その他'],
-    },
-    '中国': {
-      '広島県': ['広島市','その他'],
-      '岡山県': ['岡山市','その他'],
-      '山口県': ['下関市','山口市','その他'],
-      '鳥取県': ['鳥取市','その他'],
-      '島根県': ['松江市','その他'],
-    },
-    '四国': {
-      '徳島県': ['徳島市','その他'],
-      '香川県': ['高松市','その他'],
-      '愛媛県': ['松山市','その他'],
-      '高知県': ['高知市','その他'],
-    },
-    '九州・沖縄': {
-      '福岡県': ['福岡市', '北九州市','その他'],
-      '佐賀県': ['佐賀市','その他'],
-      '長崎県': ['長崎市','その他'],
-      '熊本県': ['熊本市','その他'],
-      '大分県': ['大分市','その他'],
-      '宮崎県': ['宮崎市','その他'],
-      '鹿児島県': ['鹿児島市','その他'],
-      '沖縄県': ['那覇市','その他'],
-    },
-  };
+  // 兵庫県内の詳細なエリアデータ（市 -> 区・町 -> 地域・丁目）
+  // すべての選択肢に英語の補助を追加
+  final Map<String, Map<String, List<String>>> hyogoAreaData = {
+  "神戸市 (Kobe City)": {
+    "東灘区 (Higashinada Ward)": [
+      "青木",
+      "魚崎北町",
+      "魚崎中町",
+      "魚崎西町",
+      "魚崎浜町",
+      "魚崎南町",
+      "岡本",
+      "鴨子ヶ原",
+      "北青木",
+      "甲南台",
+      "甲南町",
+      "向洋町中",
+      "向洋町西",
+      "向洋町東",
+      "住吉台",
+      "住吉浜手",
+      "住吉本町",
+      "住吉宮町",
+      "住吉山手",
+      "田中町",
+      "深江北町",
+      "深江浜町",
+      "深江南町",
+      "深江本町",
+      "深江和灘町",
+      "本庄町",
+      "御影",
+      "御影石町",
+      "御影塚町",
+      "御影中町",
+      "御影浜町",
+      "御影本町",
+      "御影山手"
+    ],
+    "灘区 (Nada Ward)": [
+      "青谷町",
+      "赤坂通",
+      "味泥町",
+      "泉通",
+      "岩屋北町",
+      "岩屋中町",
+      "岩屋南町",
+      "上野通",
+      "烏帽子町",
+      "大内通",
+      "大石北町",
+      "大石南町",
+      "大石東町",
+      "大石八幡町",
+      "王子町",
+      "上河原通",
+      "神ノ木通",
+      "神前町",
+      "岸地通",
+      "国玉通",
+      "楠丘町",
+      "楠ケ丘町",
+      "倉石通",
+      "黒土",
+      "高徳町",
+      "桜ケ丘町",
+      "沢の鶴",
+      "篠原",
+      "篠原伯母野山町",
+      "篠原中町",
+      "下河原通",
+      "城内通",
+      "新在家南町",
+      "水道筋",
+      "千旦通",
+      "高羽",
+      "徳井",
+      "中郷町",
+      "永手",
+      "灘北通",
+      "灘浜東",
+      "灘浜南",
+      "西灘",
+      "畑原通",
+      "浜田町",
+      "原田通",
+      "稗原町",
+      "日尾町",
+      "琵琶町",
+      "備後町",
+      "福住通",
+      "船寺通",
+      "摩耶海岸通",
+      "摩耶埠頭",
+      "箕岡通",
+      "宮山町",
+      "森後町",
+      "薬師通",
+      "八幡町",
+      "六甲山町",
+      "六甲台町",
+      "六甲町"
+    ],
+    "中央区 (Chuo Ward)": [
+      "相生町",
+      "磯上通",
+      "磯辺通",
+      "伊藤町",
+      "江戸町",
+      "小野柄通",
+      "海岸通",
+      "加納町",
+      "京町",
+      "国香通",
+      "琴ノ緒町",
+      "小篭通",
+      "栄町通",
+      "坂口通",
+      "三宮町",
+      "東雲通",
+      "下山手通",
+      "新港町",
+      "諏訪山町",
+      "多聞通",
+      "中山手通",
+      "浪花町",
+      "二宮町",
+      "野崎通",
+      "旗塚通",
+      "花隈町",
+      "浜辺通",
+      "播磨町",
+      "東町",
+      "東本通",
+      "日暮通",
+      "葺合町",
+      "布引町",
+      "弁天町",
+      "ポートアイランド",
+      "前町",
+      "真砂通",
+      "南本町",
+      "宮本通",
+      "元町高架通",
+      "元町通",
+      "森永町",
+      "若菜通",
+      "脇浜海岸通",
+      "脇浜町",
+      "割塚通"
+    ],
+    "兵庫区 (Hyogo Ward)": [
+      "荒田町",
+      "石井町",
+      "上沢通",
+      "駅南通",
+      "大井通",
+      "会下山町",
+      "笠松通",
+      "菊水町",
+      "北仲通",
+      "楠谷町",
+      "小河通",
+      "五宮町",
+      "七宮町",
+      "新開地",
+      "神明町",
+      "千鳥町",
+      "大開通",
+      "中道通",
+      "西仲通",
+      "浜中町",
+      "東山町",
+      "鵯越町",
+      "古湊通",
+      "御崎本町",
+      "水木通",
+      "湊町",
+      "南仲町",
+      "夢野町",
+      "吉田町",
+      "和田山通",
+      "和田宮通",
+      "和田岬町"
+    ],
+    "長田区 (Nagata Ward)": [
+      "池田谷",
+      "一番町",
+      "鶯町",
+      "大塚町",
+      "腕塚町",
+      "海運町",
+      "垣内町",
+      "神楽町",
+      "片山町",
+      "兼田町",
+      "苅藻島町",
+      "川西通",
+      "久保町",
+      "駒ヶ林町",
+      "五番町",
+      "駒栄町",
+      "長楽町",
+      "大橋町",
+      "高取山町",
+      "千歳町",
+      "寺池町",
+      "長田町",
+      "長田天神町",
+      "名倉町",
+      "西尻池町",
+      "野田町",
+      "浜添通",
+      "東尻池町",
+      "房王寺町",
+      "細田町",
+      "本庄町",
+      "真野町",
+      "御屋敷通",
+      "南駒栄町",
+      "宮川町",
+      "若松町"
+    ],
+    "須磨区 (Suma Ward)": [
+      "青葉町",
+      "池田町",
+      "一ノ谷町",
+      "板宿町",
+      "稲葉町",
+      "大手",
+      "大田町",
+      "奥須磨",
+      "神の谷",
+      "北町",
+      "行平町",
+      "車",
+      "小寺町",
+      "桜木町",
+      "潮見台町",
+      "白川",
+      "菅の台",
+      "須磨浦通",
+      "須磨寺町",
+      "外浜町",
+      "大黒町",
+      "多井畑",
+      "月見山",
+      "寺田町",
+      "道正台",
+      "中落合",
+      "西落合",
+      "東白川台",
+      "東町",
+      "平田町",
+      "古川町",
+      "前池町",
+      "南落合",
+      "緑が丘",
+      "妙法寺",
+      "弥生が丘",
+      "横尾"
+    ],
+    "垂水区 (Tarumi Ward)": [
+      "青山台",
+      "朝谷",
+      "霞ヶ丘",
+      "学が丘",
+      "神田",
+      "小束台",
+      "塩屋町",
+      "下畑町",
+      "星が丘",
+      "星陵台",
+      "清玄町",
+      "千鳥が丘",
+      "高丸",
+      "多聞台",
+      "多聞町",
+      "つつじが丘",
+      "潮見が丘",
+      "天ノ下町",
+      "仲田",
+      "中道",
+      "西舞子",
+      "東舞子町",
+      "日向",
+      "福田",
+      "本多聞",
+      "舞子台",
+      "舞多聞西",
+      "舞多聞東",
+      "松風台",
+      "美山台",
+      "名谷町",
+      "桃山台"
+    ],
+    "北区 (Kita Ward)": [
+      "有野町",
+      "有野台",
+      "有馬町",
+      "泉台",
+      "大沢町",
+      "大池",
+      "大脇台",
+      "岡場",
+      "小倉台",
+      "鹿の子台",
+      "唐櫃台",
+      "菊水台",
+      "君影町",
+      "京地",
+      "幸陽町",
+      "甲栄台",
+      "五葉",
+      "杉尾台",
+      "鈴蘭台",
+      "鈴蘭台北町",
+      "鈴蘭台東町",
+      "惣山町",
+      "道場町",
+      "長尾町",
+      "中里",
+      "西大池",
+      "西山",
+      "谷上",
+      "八多町",
+      "花山台",
+      "ひよどり台",
+      "藤原台",
+      "松が枝町",
+      "南五葉",
+      "山田町",
+      "八多町"
+    ],
+    "西区 (Nishi Ward)": [
+      "伊川谷町",
+      "押部谷町",
+      "学園東町",
+      "春日台",
+      "樫野台",
+      "狩場台",
+      "糀台",
+      "工業団地",
+      "桜が丘東町",
+      "竹の台",
+      "月が丘",
+      "玉津町",
+      "天王山",
+      "中野",
+      "櫨谷町",
+      "平野町",
+      "福吉台",
+      "美賀多台",
+      "見津が丘",
+      "森友"
+    ]
+  },
+  "尼崎市 (Amagasaki City)": {
+    "全域 (All Areas)": [
+      "潮江",
+      "神田北通",
+      "常光寺",
+      "立花町",
+      "塚口本町",
+      "東園田町",
+      "南塚口町",
+      "武庫之荘",
+      "昭和通",
+      "西難波町",
+      "浜田町",
+      "元浜町",
+      "開明町",
+      "南武庫之荘",
+      "道意町"
+    ]
+  },
+  "伊丹市 (Itami City)": {
+    "全域 (All Areas)": [
+      "荒牧",
+      "荻野",
+      "春日丘",
+      "北河原",
+      "千僧",
+      "南野",
+      "船原",
+      "中央",
+      "桜ヶ丘",
+      "宮ノ前",
+      "昆陽",
+      "池尻",
+      "東有岡",
+      "西台",
+      "口酒井"
+    ]
+  },
+  "西宮市 (Nishinomiya City)": {
+    "全域 (All Areas)": [
+      "池田町",
+      "上甲子園",
+      "甲東園",
+      "甲陽園",
+      "高木西町",
+      "苦楽園一番町",
+      "鳴尾浜",
+      "広田町",
+      "羽衣町",
+      "今津",
+      "大社町",
+      "瓦林町",
+      "甲子園口",
+      "甲子園浜",
+      "山口町",
+      "鷲林寺",
+      "門戸厄神"
+    ]
+  },
+  "宝塚市 (Takarazuka City)": {
+    "全域 (All Areas)": [
+      "安倉中",
+      "伊孑志",
+      "花屋敷荘園",
+      "光ガ丘",
+      "山本丸橋",
+      "清荒神",
+      "長谷",
+      "大原野",
+      "小浜",
+      "逆瀬台",
+      "末広町",
+      "栄町",
+      "仁川",
+      "御殿山"
+    ]
+  },
+  "川西市 (Kawanishi City)": {
+    "全域 (All Areas)": [
+      "大和東",
+      "清和台東",
+      "鼓が滝",
+      "多田院",
+      "東多田",
+      "南花屋敷",
+      "錦松台",
+      "緑台",
+      "向陽台",
+      "絹延橋",
+      "久代",
+      "火打",
+      "けやき坂"
+    ]
+  },
+  "芦屋市 (Ashiya City)": {
+    "全域 (All Areas)": [
+      "大原町",
+      "甲南町",
+      "精道町",
+      "月若町",
+      "西山町",
+      "六麓荘町",
+      "船戸町",
+      "打出小槌町",
+      "宮塚町",
+      "高浜町",
+      "浜風町",
+      "潮見町",
+      "涼風町"
+    ]
+  },
+  "明石市 (Akashi City)": {
+    "全域 (All Areas)": [
+      "魚住町西岡",
+      "大久保町ゆりのき通",
+      "藤江",
+      "林崎町",
+      "松江",
+      "和坂",
+      "相生町",
+      "旭が丘",
+      "太寺",
+      "大蔵海岸通",
+      "金ケ崎",
+      "貴崎",
+      "小久保",
+      "西明石",
+      "東野町",
+      "本町",
+      "山下町"
+    ]
+  },
+  "加古川市 (Kakogawa City)": {
+    "全域 (All Areas)": [
+      "尾上町口里",
+      "加古川町寺家町",
+      "神野町",
+      "野口町野口",
+      "平岡町新在家",
+      "八幡町中西条",
+      "東神吉町",
+      "志方町",
+      "米田町",
+      "別府町",
+      "神吉町",
+      "東加古川",
+      "西神吉町"
+    ]
+  },
+  "高砂市 (Takasago City)": {
+    "全域 (All Areas)": [
+      "阿弥陀",
+      "曽根町",
+      "高砂町",
+      "米田町",
+      "荒井町",
+      "竜山",
+      "伊保",
+      "今市",
+      "魚橋",
+      "梅井",
+      "北浜",
+      "中島",
+      "百合ヶ丘"
+    ]
+  },
+  "姫路市 (Himeji City)": {
+    "全域 (All Areas)": [
+      "安田",
+      "駅前町",
+      "柿島",
+      "五軒邸",
+      "紺屋町",
+      "白浜町",
+      "飾磨区",
+      "広畑区",
+      "網干区",
+      "香寺町",
+      "夢前町",
+      "林田町",
+      "家島町",
+      "的形町",
+      "大津区",
+      "勝原区",
+      "余部区"
+    ]
+  }
+};
 
-  List<String> getPrefectures() {
-    if (_region == null) return [];
-    return areaData[_region!]!.keys.toList();
+  // 選択可能な市のリストを返す
+  List<String> getCities() {
+    return hyogoAreaData.keys.toList();
   }
 
-  List<String> getCities() {
-    if (_region == null || _prefecture == null) return [];
-    return areaData[_region!]![_prefecture!] ?? [];
+  // 選択された市に基づいて、その中の区・町のリストを返す
+  List<String> getWards(String? city) {
+    if (city == null || !hyogoAreaData.containsKey(city)) return [];
+    return hyogoAreaData[city]!.keys.toList();
+  }
+
+  // 選択された区・町に基づいて、その中の地域・丁目のリストを返す
+  List<String> getNeighborhoods(String? city, String? ward) {
+    if (city == null || ward == null || !hyogoAreaData.containsKey(city) || !hyogoAreaData[city]!.containsKey(ward)) return [];
+    return hyogoAreaData[city]![ward] ?? [];
   }
 
   void addSelectedArea() {
-    if (_region != null && _prefecture != null && _city != null) {
-      final area = '$_region > $_prefecture > $_city';
+    if (_selectedCity != null && _selectedWard != null && _selectedNeighborhood != null) {
+      final area = '兵庫県 (Hyogo Pref.) > $_selectedCity > $_selectedWard > $_selectedNeighborhood'; // 英語補助も追加
       if (!selectedAreas.contains(area)) {
         setState(() {
           selectedAreas.add(area);
@@ -116,88 +596,165 @@ class _AreaSelectorState extends State<AreaSelector> {
 
   @override
   Widget build(BuildContext context) {
+    // アプリ全体で使うメインの色を定義
+    final Color mainColor = Colors.teal[800]!; // 濃いティール
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("希望エリアを選択（複数可）",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-
-        const SizedBox(height: 12),
-
+        // 市の選択ドロップダウン
         DropdownButtonFormField<String>(
-          decoration: const InputDecoration(labelText: '地域カテゴリ'),
-          value: _region,
-          items: areaData.keys
-              .map((region) =>
-                  DropdownMenuItem(value: region, child: Text(region)))
+          decoration: InputDecoration(
+            labelText: '市', // 日本語のみに短縮
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            prefixIcon: Icon(Icons.location_city, color: mainColor), // アイコン色もメインカラーに
+            filled: true,
+            fillColor: Colors.white.withOpacity(0.9),
+          ),
+          value: _selectedCity,
+          items: getCities()
+              .map((city) =>
+                  DropdownMenuItem(value: city, child: Text(city))) // ここも英語併記の文字列を表示
               .toList(),
           onChanged: (val) {
             setState(() {
-              _region = val;
-              _prefecture = null;
-              _city = null;
+              _selectedCity = val;
+              _selectedWard = null; // 市が変わったら区・町をリセット
+              _selectedNeighborhood = null; // 地域・丁目もリセット
             });
           },
         ),
-
-        if (_region != null)
-          DropdownButtonFormField<String>(
-            decoration: const InputDecoration(labelText: '都道府県'),
-            value: _prefecture,
-            items: getPrefectures()
-                .map((pref) =>
-                    DropdownMenuItem(value: pref, child: Text(pref)))
-                .toList(),
-            onChanged: (val) {
-              setState(() {
-                _prefecture = val;
-                _city = null;
-              });
-            },
-          ),
-
-        if (_prefecture != null)
-          DropdownButtonFormField<String>(
-            decoration: const InputDecoration(labelText: '市区町村'),
-            value: _city,
-            items: getCities()
-                .map((city) =>
-                    DropdownMenuItem(value: city, child: Text(city)))
-                .toList(),
-            onChanged: (val) {
-              setState(() {
-                _city = val;
-              });
-            },
-          ),
-
-        const SizedBox(height: 10),
-
-        ElevatedButton(
-          onPressed:
-              (_region != null && _prefecture != null && _city != null)
-                  ? addSelectedArea
-                  : null,
-          child: const Text('この希望エリアを追加'),
+        Text(
+          'City', // 英語を別のTextウィジェットで表示
+          style: TextStyle(fontSize: 12, color: Colors.grey[700]),
         ),
 
+        // 区・町の選択ドロップダウン
+        if (_selectedCity != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 20.0),
+            child: DropdownButtonFormField<String>(
+              decoration: InputDecoration(
+                labelText: '区・町', // 日本語のみに短縮
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: Icon(Icons.location_on, color: mainColor), // アイコン色もメインカラーに
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.9),
+              ),
+              value: _selectedWard,
+              items: getWards(_selectedCity)
+                  .map((ward) =>
+                      DropdownMenuItem(value: ward, child: Text(ward))) // ここも英語併記の文字列を表示
+                  .toList(),
+              onChanged: (val) {
+                setState(() {
+                  _selectedWard = val;
+                  _selectedNeighborhood = null; // 区・町が変わったら地域・丁目をリセット
+                });
+              },
+            ),
+          ),
+        if (_selectedCity != null)
+          Text(
+            'Ward/Town', // 英語を別のTextウィジェットで表示
+            style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+          ),
+
+        // 地域・丁目の選択ドロップダウン
+        if (_selectedWard != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 20.0),
+            child: DropdownButtonFormField<String>(
+              decoration: InputDecoration(
+                labelText: '地域・丁目', // 日本語のみに短縮
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: Icon(Icons.place, color: mainColor), // アイコン色もメインカラーに
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.9),
+              ),
+              value: _selectedNeighborhood,
+              items: getNeighborhoods(_selectedCity, _selectedWard)
+                  .map((neighborhood) =>
+                      DropdownMenuItem(value: neighborhood, child: Text(neighborhood))) // ここも英語併記の文字列を表示
+                  .toList(),
+              onChanged: (val) {
+                setState(() {
+                  _selectedNeighborhood = val;
+                });
+              },
+            ),
+          ),
+        if (_selectedWard != null)
+          Text(
+            'Neighborhood/Block', // 英語を別のTextウィジェットで表示
+            style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+          ),
+
         const SizedBox(height: 20),
+
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: mainColor, // メインカラー
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              elevation: 5,
+            ),
+            onPressed:
+                (_selectedCity != null && _selectedWard != null && _selectedNeighborhood != null)
+                    ? addSelectedArea
+                    : null,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Add this desired area',
+                  style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.7)),
+                ),
+                const SizedBox(height: 2),
+                const Text('この希望エリアを追加', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 30),
 
         if (selectedAreas.isNotEmpty)
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                '選択された希望エリア:',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Selected desired areas:',
+                    style: TextStyle(fontSize: 14, color: Colors.black87.withOpacity(0.8)),
+                  ),
+                  const SizedBox(height: 2),
+                  const Text(
+                    '選ばれた希望エリア:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+                  ),
+                ],
               ),
-              ...selectedAreas.map((area) => ListTile(
-                    title: Text(area),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => removeSelectedArea(area),
-                    ),
-                  )),
+              const SizedBox(height: 10),
+              ...selectedAreas.map((area) => Card(
+                margin: const EdgeInsets.symmetric(vertical: 5),
+                elevation: 2,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                child: ListTile(
+                  title: Text(area, style: const TextStyle(fontSize: 15)),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => removeSelectedArea(area),
+                  ),
+                ),
+              )),
             ],
           ),
       ],

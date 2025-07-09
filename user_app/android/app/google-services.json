@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "126192657081",
+    "project_id": "ffh-firebase",
+    "storage_bucket": "ffh-firebase.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:126192657081:android:6d601cbac38ac54052b168",
+        "android_client_info": {
+          "package_name": "com.example.ffh_sdj"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpI7H5yDX_Oahg9fMJQ3F79KqMez7Pq6M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:126192657081:android:26c5df2b281ff6b052b168",
+        "android_client_info": {
+          "package_name": "com.example.owner_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpI7H5yDX_Oahg9fMJQ3F79KqMez7Pq6M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
