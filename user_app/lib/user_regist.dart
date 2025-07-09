@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // ★追加: Firebase Authenticationのインポート
 import 'user_condition.dart';
-import 'terms_of_service.dart'; 
+import 'terms_of_service.dart';
+import 'house_select.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart'; 
+import 'firebase_options.dart';
 
 
 class UserRegistrationScreen extends StatefulWidget {
+  const UserRegistrationScreen({super.key}); // super.keyを追加
+
   @override
   _UserRegistrationScreenState createState() => _UserRegistrationScreenState();
 }
@@ -13,12 +23,12 @@ class UserRegistrationScreen extends StatefulWidget {
 class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  String _familyName = ''; // 苗字を追加
-  String _givenName = ''; // 名前を追加
+  String _familyName = '';
+  String _givenName = '';
   String _email = '';
   String _password = '';
   String _confirmPassword = '';
-  String _nationality = '日本 (Japan)'; // 初期値を「日本 (Japan)」に設定し、英語併記
+  String _nationality = '日本 (Japan)';
   DateTime? _birthDate;
   List<String> _selectedLanguages = [];
   String _currentAddress = '';
@@ -26,17 +36,15 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
-  // 追加情報のための変数
   String _phoneNumber = '';
-  String? _residenceStatus; // 在留資格
-  String _residenceCardNumber = ''; // 在留カード番号
+  String? _residenceStatus;
+  String _residenceCardNumber = '';
   String _emergencyContactName = '';
   String _emergencyContactPhoneNumber = '';
-  String? _emergencyContactRelationship; // 続柄
-  String? _stayDurationInJapan; // 日本での滞在期間
+  String? _emergencyContactRelationship;
+  String? _stayDurationInJapan;
 
-  // 国籍が日本かどうかを判定するフラグ
-  bool _isJapanese = true; // 初期値は「日本 (Japan)」なのでtrue
+  bool _isJapanese = true;
 
   final List<String> nationalities = [
     '日本 (Japan)', 'アメリカ (USA)', 'イギリス (UK)', 'カナダ (Canada)', 'オーストラリア (Australia)',
@@ -51,7 +59,6 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
     'スペイン語 (Spanish)', 'フランス語 (French)', 'ベトナム語 (Vietnamese)', 'その他 (Other)'
   ];
 
-  // 在留資格の選択肢 (日本語 (English) 形式)
   final List<String> residenceStatuses = [
     '永住者 (Permanent Resident)', '日本人の配偶者等 (Spouse or Child of Japanese National)',
     '定住者 (Long-Term Resident)', '技術・人文知識・国際業務 (Engineer/Specialist in Humanities/International Services)',
@@ -59,17 +66,14 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
     '家族滞在 (Dependent)', 'その他 (Other)'
   ];
 
-  // 続柄の選択肢 (日本語 (English) 形式)
   final List<String> relationships = [
     '親 (Parent)', '兄弟 (Sibling)', '友人 (Friend)', 'その他 (Other)'
   ];
 
-  // 日本での滞在期間の選択肢 (日本語 (English) 形式)
   final List<String> stayDurations = [
     '1年未満 (Less than 1 year)', '1〜3年 (1-3 years)', '3〜5年 (3-5 years)',
     '5年以上 (More than 5 years)', '永住 (Permanent)'
   ];
-
 
   int? _selectedYear;
   int? _selectedMonth;
@@ -99,7 +103,6 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
     );
   }
 
-  // ★追加: 利用規約をダイアログで表示する関数
   void _showTermsOfServiceDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -107,18 +110,17 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
         return AlertDialog(
           title: const Text('利用規約'),
           content: SizedBox(
-            width: double.maxFinite, // ダイアログの幅を最大にする
-            height: MediaQuery.of(context).size.height * 0.7, // 画面の高さの70%を使う
+            width: double.maxFinite,
+            height: MediaQuery.of(context).size.height * 0.7,
             child: SingleChildScrollView(
-              // 利用規約が長い場合にスクロールできるようにする
-              child: Text(termsOfServiceText), // termsOfService.dart からインポートしたテキスト
+              child: Text(termsOfServiceText),
             ),
           ),
           actions: <Widget>[
             TextButton(
               child: const Text('閉じる'),
               onPressed: () {
-                Navigator.of(context).pop(); // ダイアログを閉じる
+                Navigator.of(context).pop();
               },
             ),
           ],
@@ -127,33 +129,103 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
     );
   }
 
+  // ★追加: Firebase Authentication を使ったユーザー登録メソッド
+  Future<void> _registerUser() async {
+    if (!_formKey.currentState!.validate() || !_agreeToTerms) {
+      _showMessage('入力にエラーがあります。すべての項目を正しく入力し、利用規約に同意してください。 (There are errors in the input. Please fill in all fields correctly and agree to the terms of use.)');
+      return;
+    }
+
+    try {
+      // Firebase Authentication でユーザーを作成
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _email,
+        password: _password,
+      );
+
+      // ユーザー登録成功後、追加情報をFirebase Firestoreに保存
+      if (userCredential.user != null) {
+        final String formattedBirthdate = DateFormat('yyyy/MM/dd').format(_birthDate!);
+        final String finalResidenceStatus = _isJapanese ? '' : (_residenceStatus ?? '');
+        final String finalResidenceCardNumber = _isJapanese ? '' : _residenceCardNumber;
+        final String finalStayDurationInJapan = _isJapanese ? '' : (_stayDurationInJapan ?? '');
+
+        // Firestoreにユーザープロファイルデータを保存
+        await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
+          'uid': userCredential.user!.uid,
+          'familyName': _familyName,
+          'givenName': _givenName,
+          'email': _email,
+          'birthdate': formattedBirthdate,
+          'nationality': _nationality,
+          'phoneNumber': _phoneNumber,
+          'selectedLanguages': _selectedLanguages,
+          'currentAddress': _currentAddress,
+          'residenceStatus': finalResidenceStatus,
+          'residenceCardNumber': finalResidenceCardNumber,
+          'emergencyContactName': _emergencyContactName,
+          'emergencyContactPhoneNumber': _emergencyContactPhoneNumber,
+          'emergencyContactRelationship': _emergencyContactRelationship!,
+          'stayDurationInJapan': finalStayDurationInJapan,
+          'isOwner': false, // このユーザーはオーナーではない
+          'registrationTimestamp': FieldValue.serverTimestamp(),
+          // 以下はuser_condition.dartで入力される希望条件ですが、
+          // 登録時に一緒に保存するならここにフィールドを追加
+          // 現状は次の画面で入力されるので、ここでは含めません
+        });
+
+        _showMessage('登録が完了しました！ (Registration complete!)');
+
+        // 登録成功後、ユーザーをログイン状態のまま次の画面へ（例: HouseSelectScreen）
+        if (mounted) {
+          // UserCondition画面には行かずに、直接HouseSelectScreenへ
+          Navigator.pushAndRemoveUntil( // これまでのスタックをクリアして遷移
+            context,
+            MaterialPageRoute(builder: (context) => const HouseSelectScreen()),
+            (Route<dynamic> route) => false,
+          );
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = '登録に失敗しました (Registration failed)';
+      if (e.code == 'weak-password') {
+        message = 'パスワードが弱すぎます。6文字以上にしてください。 (The password provided is too weak. Please use 6 or more characters.)';
+      } else if (e.code == 'email-already-in-use') {
+        message = 'このメールアドレスは既に使用されています。 (The email address is already in use by another account.)';
+      } else if (e.code == 'invalid-email') {
+        message = 'メールアドレスの形式が正しくありません。 (The email address is not valid.)';
+      }
+      _showMessage(message);
+    } catch (e) {
+      _showMessage('エラーが発生しました: ${e.toString()} (An error occurred: ${e.toString()})');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final Color mainBackgroundColor = const Color(0xFFEFF7F6);
+    final Color mainColor = Colors.teal[800]!;
+    final Color secondaryColor = Colors.teal;
 
-
-    // アプリ全体で使うメインの色を定義
-    final Color mainBackgroundColor = const Color(0xFFEFF7F6); // やさしい背景色
-    final Color mainColor = Colors.teal[800]!; // 濃いティール
-    final Color secondaryColor = Colors.teal; // 明るいティール
+    // この変数はWidget buildのスコープに移動しました
+    String? _guarantorSupport;
+    String? _initialPaymentMethod;
+    String? _contractPeriod;
+    String? _screeningLanguageSupport;
     
-  String? _guarantorSupport; // 保証人/保証会社サポート
-  String? _initialPaymentMethod; // 初期費用の支払い方法
-  String? _contractPeriod; // 契約期間
-  
-  String? _screeningLanguageSupport; // 入居審査の言語サポート
-  final List<String> guarantorOptions = [
-    '不要 (Not required)', '保証会社利用可 (Guarantor company available)', '保証人必須 (Guarantor required)'
-  ];
-  final List<String> paymentMethodOptions = [
-    '現金 (Cash)', 'クレジットカード (Credit Card)', '銀行振込 (Bank Transfer)', 'その他 (Other)'
-  ];
-  final List<String> contractPeriodOptions = [
-    '1年未満 (Less than 1 year)', '1年 (1 year)', '2年 (2 years)', '2年以上 (More than 2 years)'
-  ];
-  
-  final List<String> screeningLanguageOptions = [
-    '日本語のみ (Japanese only)', '英語対応 (English support)', 'その他言語対応 (Other languages support)'
-  ];
+    final List<String> guarantorOptions = [
+      '不要 (Not required)', '保証会社利用可 (Guarantor company available)', '保証人必須 (Guarantor required)'
+    ];
+    final List<String> paymentMethodOptions = [
+      '現金 (Cash)', 'クレジットカード (Credit Card)', '銀行振込 (Bank Transfer)', 'その他 (Other)'
+    ];
+    final List<String> contractPeriodOptions = [
+      '1年未満 (Less than 1 year)', '1年 (1 year)', '2年 (2 years)', '2年以上 (More than 2 years)'
+    ];
+    
+    final List<String> screeningLanguageOptions = [
+      '日本語のみ (Japanese only)', '英語対応 (English support)', 'その他言語対応 (Other languages support)'
+    ];
 
     return Scaffold(
       appBar: AppBar(
@@ -171,24 +243,24 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
             ),
           ],
         ),
-        backgroundColor: mainColor, // AppBarの色を統一
-        foregroundColor: Colors.white, // タイトル色
+        backgroundColor: mainColor,
+        foregroundColor: Colors.white,
         centerTitle: false,
       ),
       body: Container(
-        color: mainBackgroundColor, // 単色背景に統一
+        color: mainBackgroundColor,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch, // 子要素を横幅いっぱいに広げる
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Column(
                   children: [
                     Text(
                       'Create your account',
-                      style: TextStyle(fontSize: 16, color: secondaryColor), // サブカラー
+                      style: TextStyle(fontSize: 16, color: secondaryColor),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 4),
@@ -197,7 +269,7 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: mainColor, // メインカラー
+                        color: mainColor,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -205,13 +277,12 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // 苗字
                 TextFormField(
                   decoration: InputDecoration(
-                    labelText: '姓', // 日本語のみに短縮
+                    labelText: '姓',
                     hintText: '例: 岡本 (Okamoto)',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    prefixIcon: Icon(Icons.person, color: mainColor), // アイコン色もメインカラーに
+                    prefixIcon: Icon(Icons.person, color: mainColor),
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.9),
                   ),
@@ -219,18 +290,17 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                   validator: (val) => val!.isEmpty ? '苗字を入力してください (Please enter your First Name)' : null,
                 ),
                 Text(
-                  'First Name', // 英語を別のTextウィジェットで表示
+                  'First Name',
                   style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
                 const SizedBox(height: 20),
 
-                // 名前
                 TextFormField(
                   decoration: InputDecoration(
-                    labelText: '名', // 日本語のみに短縮
+                    labelText: '名',
                     hintText: '例: 寿基 (Kazuki)',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    prefixIcon: Icon(Icons.person_outline, color: mainColor), // アイコン色もメインカラーに
+                    prefixIcon: Icon(Icons.person_outline, color: mainColor),
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.9),
                   ),
@@ -238,12 +308,11 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                   validator: (val) => val!.isEmpty ? '名前を入力してください (Please enter your Last Name)' : null,
                 ),
                 Text(
-                  'Last Name', // 英語を別のTextウィジェットで表示
+                  'Last Name',
                   style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
                 const SizedBox(height: 20),
 
-                // 生年月日選択
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Column(
@@ -267,7 +336,7 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                     Expanded(
                       child: DropdownButtonFormField<int>(
                         decoration: InputDecoration(
-                          labelText: '年', // 日本語のみに短縮
+                          labelText: '年',
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                           filled: true,
                           fillColor: Colors.white.withOpacity(0.9),
@@ -289,7 +358,7 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                     Expanded(
                       child: DropdownButtonFormField<int>(
                         decoration: InputDecoration(
-                          labelText: '月', // 日本語のみに短縮
+                          labelText: '月',
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                           filled: true,
                           fillColor: Colors.white.withOpacity(0.9),
@@ -311,7 +380,7 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                     Expanded(
                       child: DropdownButtonFormField<int>(
                         decoration: InputDecoration(
-                          labelText: '日', // 日本語のみに短縮
+                          labelText: '日',
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                           filled: true,
                           fillColor: Colors.white.withOpacity(0.9),
@@ -332,12 +401,11 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                   ],
                 ),
                 Text(
-                  'Year / Month / Day', // 英語を別のTextウィジェットで表示
+                  'Year / Month / Day',
                   style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
                 const SizedBox(height: 20),
 
-                // 国籍選択
                 DropdownButtonFormField<String>(
                   value: _nationality,
                   items: nationalities
@@ -346,9 +414,7 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                   onChanged: (val) {
                     setState(() {
                       _nationality = val!;
-                      // 「日本 (Japan)」が選択された場合に_isJapaneseをtrueにする
                       _isJapanese = (val == '日本 (Japan)');
-                      // 国籍が日本以外になった場合、外国人向け情報をリセット
                       if (!_isJapanese) {
                         _residenceStatus = null;
                         _residenceCardNumber = '';
@@ -357,46 +423,44 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                     });
                   },
                   decoration: InputDecoration(
-                    labelText: '国籍', // 日本語のみに短縮
+                    labelText: '国籍',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    prefixIcon: Icon(Icons.public, color: mainColor), // アイコン色もメインカラーに
+                    prefixIcon: Icon(Icons.public, color: mainColor),
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.9),
                   ),
                 ),
                 Text(
-                  'Nationality', // 英語を別のTextウィジェットで表示
+                  'Nationality',
                   style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
                 const SizedBox(height: 20),
 
-                // 話せる言語選択
                 MultiSelectDialogField<String>(
                   items: languages.map((lang) => MultiSelectItem(lang, lang)).toList(),
-                  title: const Text("話せる言語を選んでください (Select languages you speak)"), // ダイアログのタイトルは併記
-                  buttonText: const Text("言語"), // ボタンのテキストは短く (Overflow対策)
-                  decoration: BoxDecoration( // TextFieldのInputDecorationに似せる
-                    border: Border.all(color: Colors.grey.shade400), // 枠線の色を調整
+                  title: const Text("話せる言語を選んでください (Select languages you speak)"),
+                  buttonText: const Text("言語"),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade400),
                     borderRadius: BorderRadius.circular(12),
                     color: Colors.white.withOpacity(0.9),
                   ),
-                  buttonIcon: Icon(Icons.language, color: mainColor), // アイコン色もメインカラーに
+                  buttonIcon: Icon(Icons.language, color: mainColor),
                   onConfirm: (values) => _selectedLanguages = values,
-                  validator: (values) => values == null || values.isEmpty ? '言語を選択してください (Select language)' : null, // 短縮
+                  validator: (values) => values == null || values.isEmpty ? '言語を選択してください (Select language)' : null,
                 ),
                 Text(
-                  'Languages you speak', // 英語を別のTextウィジェットで表示
+                  'Languages you speak',
                   style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
                 const SizedBox(height: 20),
 
-                // メールアドレス
                 TextFormField(
                   decoration: InputDecoration(
-                    labelText: 'メールアドレス', // 日本語のみに短縮
+                    labelText: 'メールアドレス',
                     hintText: '例: your.email@example.com',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    prefixIcon: Icon(Icons.email, color: mainColor), // アイコン色もメインカラーに
+                    prefixIcon: Icon(Icons.email, color: mainColor),
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.9),
                   ),
@@ -405,18 +469,17 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                   validator: (val) => !val!.contains('@') ? '正しいメール形式で入力してください (Please enter a valid email format)' : null,
                 ),
                 Text(
-                  'Email address', // 英語を別のTextウィジェットで表示
+                  'Email address',
                   style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
                 const SizedBox(height: 20),
 
-                // パスワード
                 TextFormField(
                   decoration: InputDecoration(
-                    labelText: 'パスワード', // 日本語のみに短縮
+                    labelText: 'パスワード',
                     hintText: '6文字以上で入力してください',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    prefixIcon: Icon(Icons.lock, color: mainColor), // アイコン色もメインカラーに
+                    prefixIcon: Icon(Icons.lock, color: mainColor),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -436,18 +499,17 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                   validator: (val) => val!.length < 6 ? '6文字以上必要です (Needs 6 or more characters)' : null,
                 ),
                 Text(
-                  'Password', // 英語を別のTextウィジェットで表示
+                  'Password',
                   style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
                 const SizedBox(height: 20),
 
-                // パスワード（確認）
                 TextFormField(
                   decoration: InputDecoration(
-                    labelText: 'パスワード（確認）', // 日本語のみに短縮
+                    labelText: 'パスワード（確認）',
                     hintText: 'もう一度入力してください',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    prefixIcon: Icon(Icons.lock_reset, color: mainColor), // アイコン色もメインカラーに
+                    prefixIcon: Icon(Icons.lock_reset, color: mainColor),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
@@ -467,18 +529,17 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                   validator: (val) => val != _password ? 'パスワードが一致しません (Passwords do not match)' : null,
                 ),
                 Text(
-                  'Confirm password', // 英語を別のTextウィジェットで表示
+                  'Confirm password',
                   style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
                 const SizedBox(height: 20),
 
-                // 電話番号 (日本人でも必要なので常に表示)
                 TextFormField(
                   decoration: InputDecoration(
-                    labelText: '電話番号', // 日本語のみに短縮
+                    labelText: '電話番号',
                     hintText: '例: 090-1234-5678',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    prefixIcon: Icon(Icons.phone, color: mainColor), // アイコン色もメインカラーに
+                    prefixIcon: Icon(Icons.phone, color: mainColor),
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.9),
                   ),
@@ -487,12 +548,11 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                   validator: (val) => val!.isEmpty ? '電話番号を入力してください (Please enter your phone number)' : null,
                 ),
                 Text(
-                  'Phone Number', // 英語を別のTextウィジェットで表示
+                  'Phone Number',
                   style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
                 const SizedBox(height: 20),
 
-                // 在留資格 (外国人向け：_isJapaneseがfalseの場合のみ表示)
                 if (!_isJapanese) ...[
                   DropdownButtonFormField<String>(
                     value: _residenceStatus,
@@ -501,30 +561,29 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                         .toList(),
                     onChanged: (val) => setState(() => _residenceStatus = val!),
                     decoration: InputDecoration(
-                      labelText: '在留資格', // 日本語のみに短縮
+                      labelText: '在留資格',
                       hintText: '選んでください',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      prefixIcon: Icon(Icons.badge, color: mainColor), // アイコン色もメインカラーに
+                      prefixIcon: Icon(Icons.badge, color: mainColor),
                       filled: true,
                       fillColor: Colors.white.withOpacity(0.9),
                     ),
                     validator: (val) => val == null || val.isEmpty ? '在留資格を選んでください (Please select your residence status)' : null,
                   ),
                   Text(
-                    'Residence Status', // 英語を別のTextウィジェットで表示
+                    'Residence Status',
                     style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                   ),
                   const SizedBox(height: 20),
                 ],
 
-                // 在留カード番号 (外国人向け：_isJapaneseがfalseの場合のみ表示)
                 if (!_isJapanese) ...[
                   TextFormField(
                     decoration: InputDecoration(
                       labelText: '在留カード番号',
                       hintText: '例: AB12345678CD',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      prefixIcon: Icon(Icons.credit_card, color: mainColor), // アイコン色もメインカラーに
+                      prefixIcon: Icon(Icons.credit_card, color: mainColor),
                       filled: true,
                       fillColor: Colors.white.withOpacity(0.9),
                     ),
@@ -538,7 +597,6 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                   const SizedBox(height: 20),
                 ],
 
-                // 日本での滞在期間 (外国人向け：_isJapaneseがfalseの場合のみ表示)
                 if (!_isJapanese) ...[
                   DropdownButtonFormField<String>(
                     value: _stayDurationInJapan,
@@ -550,7 +608,7 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                       labelText: '日本での滞在期間',
                       hintText: '選んでください',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      prefixIcon: Icon(Icons.calendar_month, color: mainColor), // アイコン色もメインカラーに
+                      prefixIcon: Icon(Icons.calendar_month, color: mainColor),
                       filled: true,
                       fillColor: Colors.white.withOpacity(0.9),
                     ),
@@ -563,13 +621,12 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                   const SizedBox(height: 20),
                 ],
 
-                // 現在の住所 (日本人でも必要なので常に表示)
                 TextFormField(
                   decoration: InputDecoration(
                     labelText: '今の住所',
                     hintText: '例: 東京都新宿区〇〇',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    prefixIcon: Icon(Icons.location_on, color: mainColor), // アイコン色もメインカラーに
+                    prefixIcon: Icon(Icons.location_on, color: mainColor),
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.9),
                   ),
@@ -582,13 +639,12 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // 緊急連絡先 (日本人でも必要なので常に表示)
                 Text(
                   '緊急連絡先',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: mainColor, // メインカラー
+                    color: mainColor,
                   ),
                 ),
                 Text(
@@ -601,7 +657,7 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                     labelText: '氏名',
                     hintText: '例: 山田 花子',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    prefixIcon: Icon(Icons.person_outline, color: mainColor), // アイコン色もメインカラーに
+                    prefixIcon: Icon(Icons.person_outline, color: mainColor),
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.9),
                   ),
@@ -618,7 +674,7 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                     labelText: '電話番号',
                     hintText: '例: 090-9876-5432',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    prefixIcon: Icon(Icons.phone_android, color: mainColor), // アイコン色もメインカラーに
+                    prefixIcon: Icon(Icons.phone_android, color: mainColor),
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.9),
                   ),
@@ -638,27 +694,26 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                       .toList(),
                   onChanged: (val) => setState(() => _emergencyContactRelationship = val!),
                   decoration: InputDecoration(
-                    labelText: '連絡先の方との関係', // 日本語のみに短縮
+                    labelText: '連絡先の方との関係',
                     hintText: '選んでください',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    prefixIcon: Icon(Icons.family_restroom, color: mainColor), // アイコン色もメインカラーに
+                    prefixIcon: Icon(Icons.family_restroom, color: mainColor),
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.9),
                   ),
                   validator: (val) => val == null || val.isEmpty ? '緊急連絡先の方との関係を選んでください (Please select emergency contact relationship)' : null,
                 ),
                 Text(
-                  'Relationship with contact person', // 英語を別のTextウィジェットで表示
+                  'Relationship with contact person',
                   style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
                 const SizedBox(height: 30),
 
-                // ★追加: 利用規約を見るボタン
                 Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton(
                     onPressed: () {
-                      _showTermsOfServiceDialog(context); // 利用規約ダイアログ表示関数を呼び出す
+                      _showTermsOfServiceDialog(context);
                     },
                     child: Text(
                       '利用規約を見る (View Terms and Conditions)',
@@ -692,7 +747,6 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                   mainColor: mainColor,
                 ),
                 const SizedBox(height: 20),
-                // 契約期間
                 _buildSubSectionTitle('Contract Period', '契約期間'),
                 const SizedBox(height: 8),
                 _buildDropdownFormField(
@@ -704,7 +758,6 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                   mainColor: mainColor,
                 ),
                 const SizedBox(height: 20),
-                // 入居審査の言語サポート
                 _buildSubSectionTitle('Screening Language Support', '入居審査の言語サポート'),
                 const SizedBox(height: 8),
                 _buildDropdownFormField(
@@ -718,7 +771,6 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                 const SizedBox(height: 40),
 
 
-                // 利用規約同意チェックボックス
                 CheckboxListTile(
                   title: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -737,7 +789,7 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                   value: _agreeToTerms,
                   onChanged: (val) => setState(() => _agreeToTerms = val ?? false),
                   controlAffinity: ListTileControlAffinity.leading,
-                  activeColor: mainColor, // チェックボックスの色をメインカラーに
+                  activeColor: mainColor,
                 ),
                 if (!_agreeToTerms && _formKey.currentState?.validate() == true)
                   Padding(
@@ -749,60 +801,29 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                   ),
                 const SizedBox(height: 30),
 
-                // 次へボタン
                 SizedBox(
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: mainColor, // メインカラー
+                      backgroundColor: mainColor,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
                       elevation: 5,
                     ),
-                    onPressed: () {
-                      if (_formKey.currentState!.validate() && _agreeToTerms) {
-                        final String formattedBirthdate = DateFormat('yyyy/MM/dd').format(_birthDate!);
-                        // 日本国籍の場合は外国人向け情報を空にする
-                        final String finalResidenceStatus = _isJapanese ? '' : (_residenceStatus ?? '');
-                        final String finalResidenceCardNumber = _isJapanese ? '' : _residenceCardNumber;
-                        final String finalStayDurationInJapan = _isJapanese ? '' : (_stayDurationInJapan ?? '');
-
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => UserCondition(
-                              name: '$_familyName $_givenName', // 苗字と名前を結合して渡す
-                              birthdate: formattedBirthdate,
-                              email: _email,
-                              password: _password,
-                              nationality: _nationality,
-                              phoneNumber: _phoneNumber,
-                              residenceStatus: finalResidenceStatus, // 条件付きで値を渡す
-                              residenceCardNumber: finalResidenceCardNumber, // 条件付きで値を渡す
-                              emergencyContactName: _emergencyContactName,
-                              emergencyContactPhoneNumber: _emergencyContactPhoneNumber,
-                              emergencyContactRelationship: _emergencyContactRelationship!,
-                              stayDurationInJapan: finalStayDurationInJapan, // 条件付きで値を渡す
-                            ),
-                          ),
-                        );
-                      } else {
-                        _showMessage('入力にエラーがあります。すべての項目を正しく入力し、利用規約に同意してください。 (There are errors in the input. Please fill in all fields correctly and agree to the terms of use.)');
-                      }
-                    },
+                    onPressed: _registerUser, // ★変更: 登録処理を_registerUserメソッドに委譲
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Next',
+                          'Register',
                           style: TextStyle(fontSize: 14, color: Colors.white70),
                         ),
                         const SizedBox(height: 2),
                         const Text(
-                          '次へ',
+                          '登録する',
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -861,7 +882,7 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
   }) {
     return DropdownButtonFormField<String>(
       decoration: InputDecoration(
-        hintText: labelText, // '選んでください' の代わりに labelText を使う
+        hintText: labelText,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         prefixIcon: Icon(icon, color: mainColor),
         filled: true,
@@ -874,9 +895,4 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
       onChanged: onChanged,
     );
   }
-
-
-
 }
-
-  

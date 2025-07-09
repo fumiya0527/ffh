@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // ★追加: Firebase Authenticationのインポート
 import 'package:ffh/user_regist.dart';
 import 'house_select.dart';
+import 'manner.dart';
+import 'quiz_question.dart';
 
 class LoginChoiceScreen extends StatelessWidget {
+  const LoginChoiceScreen({super.key}); // const constructor
+
   @override
   Widget build(BuildContext context) {
     // アプリ全体で使うメインの色を定義
@@ -107,7 +112,7 @@ class LoginChoiceScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => UserRegistrationScreen()),
+                        MaterialPageRoute(builder: (context) => const UserRegistrationScreen()), // constを追加
                       );
                     },
                   ),
@@ -144,7 +149,7 @@ class LoginChoiceScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => LoginScreen()),
+                        MaterialPageRoute(builder: (context) => const LoginScreen()), // constを追加
                       );
                     },
                   ),
@@ -256,8 +261,10 @@ class LoginChoiceScreen extends StatelessWidget {
 
 // LoginScreen (ログイン画面) - UIを改善
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key}); // const constructor
+
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
@@ -277,6 +284,41 @@ class _LoginScreenState extends State<LoginScreen> {
       SnackBar(content: Text(message)),
     );
   }
+
+  // ★追加: ログイン処理
+    Future<void> _loginUser() async {
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+      _showMessage('ログインしました！ (Logged in successfully!)');
+
+      // ログイン成功後、QuizScreenへ遷移
+      if (mounted) {
+        Navigator.pushAndRemoveUntil( // これまでのスタックをクリアして遷移
+          context,
+          MaterialPageRoute(builder: (context) => const QuizScreen()), // ★ここをQuizScreenに変更
+          (Route<dynamic> route) => false,
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String message;
+      if (e.code == 'user-not-found') {
+        message = 'ユーザーが見つかりません。 (No user found for that email.)';
+      } else if (e.code == 'wrong-password') {
+        message = 'パスワードが間違っています。 (Wrong password provided for that user.)';
+      } else if (e.code == 'invalid-email') {
+        message = 'メールアドレスの形式が正しくありません。 (The email address is not valid.)';
+      } else {
+        message = 'ログインに失敗しました: ${e.message ?? '不明なエラー'} (Login failed: ${e.message ?? 'Unknown error'})';
+      }
+      _showMessage(message);
+    } catch (e) {
+      _showMessage('エラーが発生しました: ${e.toString()} (An error occurred: ${e.toString()})');
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -394,7 +436,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => EmailVerificationScreen()),
+                        MaterialPageRoute(builder: (context) => const EmailVerificationScreen()), // constを追加
                       );
                     },
                     child: Column(
@@ -428,12 +470,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       elevation: 5,
                     ),
-                    onPressed: () {
-                      // TODO: ログイン処理
-                      //_showMessage('ログイン処理中... (Logging in...)');
-                      // 例: ログイン成功後にホーム画面へ遷移
-                      //Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => house_select.dart()));
-                    },
+                    onPressed: _loginUser, // ★変更: ログイン処理を_loginUserメソッドに委譲
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -464,8 +501,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
 // EmailVerificationScreen (メール認証コード送信画面) - UIを改善
 class EmailVerificationScreen extends StatefulWidget {
+  const EmailVerificationScreen({super.key}); // const constructor
+
   @override
-  _EmailVerificationScreenState createState() => _EmailVerificationScreenState();
+  State<EmailVerificationScreen> createState() => _EmailVerificationScreenState();
 }
 
 class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
@@ -483,7 +522,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     );
   }
 
-  void _sendVerificationCode() {
+  // ★追加: パスワードリセットメール送信
+  Future<void> _sendPasswordResetEmail() async {
     final email = _emailController.text.trim();
 
     if (email.isEmpty || !email.contains('@')) {
@@ -491,16 +531,27 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       return;
     }
 
-    // TODO: 実際はここで認証コードを送信（API呼び出しなど）
-    _showMessage('認証コードを $email に送りました (Verification code sent to $email)');
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CodeInputScreen(email: email),
-      ),
-    );
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      _showMessage('パスワードリセットのメールを送信しました。ご確認ください。 (Password reset email sent. Please check your inbox.)');
+      if (mounted) {
+        Navigator.pop(context); // 認証コード入力画面には行かずに前の画面に戻る
+      }
+    } on FirebaseAuthException catch (e) {
+      String message;
+      if (e.code == 'user-not-found') {
+        message = 'このメールアドレスを持つユーザーは見つかりません。 (No user found for that email.)';
+      } else if (e.code == 'invalid-email') {
+        message = 'メールアドレスの形式が正しくありません。 (The email address is not valid.)';
+      } else {
+        message = 'パスワードリセットメールの送信に失敗しました: ${e.message ?? '不明なエラー'} (Failed to send password reset email: ${e.message ?? 'Unknown error'})';
+      }
+      _showMessage(message);
+    } catch (e) {
+      _showMessage('エラーが発生しました: ${e.toString()} (An error occurred: ${e.toString()})');
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -583,7 +634,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                     ),
                     elevation: 5,
                   ),
-                  onPressed: _sendVerificationCode,
+                  onPressed: _sendPasswordResetEmail, // ★変更: パスワードリセットメール送信
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -611,164 +662,12 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   }
 }
 
-// CodeInputScreen (認証コード入力画面) - UIを改善
-class CodeInputScreen extends StatefulWidget {
-  final String email;
 
-  CodeInputScreen({required this.email});
-
-  @override
-  _CodeInputScreenState createState() => _CodeInputScreenState();
-}
-
-class _CodeInputScreenState extends State<CodeInputScreen> {
-  final TextEditingController _codeController = TextEditingController();
-
-  @override
-  void dispose() {
-    _codeController.dispose();
-    super.dispose();
-  }
-
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
-
-  void _verifyCode() {
-    final code = _codeController.text.trim();
-
-    if (code == '1221') { // 仮の認証コード
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ResetPasswordScreen(),
-        ),
-      );
-    } else {
-      _showMessage('認証コードが違います (Incorrect verification code)');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // アプリ全体で使うメインの色を定義
-    final Color mainBackgroundColor = const Color(0xFFEFF7F6); // やさしい背景色
-    final Color mainColor = Colors.teal[800]!; // 濃いティール
-    final Color secondaryColor = Colors.teal; // 明るいティール
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Enter verification code',
-              style: TextStyle(fontSize: 14, color: Colors.white70),
-            ),
-            const SizedBox(height: 2),
-            const Text(
-              '認証コード入力',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-            ),
-          ],
-        ),
-        backgroundColor: mainColor,
-        foregroundColor: Colors.white,
-        centerTitle: false,
-      ),
-      body: Container(
-        color: mainBackgroundColor, // 単色背景に統一
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Column(
-                children: [
-                  Text(
-                    'Please enter the verification code sent to your email',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: Colors.black87.withOpacity(0.8)),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'メールに送られた認証コードを入力してください',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.black87, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'メールアドレス: ${widget.email}',
-                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-              ),
-              const SizedBox(height: 30),
-              TextField(
-                controller: _codeController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: '認証コード',
-                  hintText: '例: 123456',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  prefixIcon: Icon(Icons.vpn_key, color: mainColor),
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.9),
-                ),
-              ),
-              Text(
-                'Verification code',
-                style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-              ),
-              const SizedBox(height: 30),
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: mainColor,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    elevation: 5,
-                  ),
-                  onPressed: _verifyCode,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Verify',
-                        style: TextStyle(fontSize: 14, color: Colors.white70),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        '認証する',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ResetPasswordScreen (パスワード再設定画面) - UIを改善
 class ResetPasswordScreen extends StatefulWidget {
+  const ResetPasswordScreen({super.key}); // const constructor
+
   @override
-  _ResetPasswordScreenState createState() => _ResetPasswordScreenState();
+  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
@@ -791,6 +690,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
+  // Firebaseのパスワードリセットフローでは、通常この画面はメール内のリンクから直接アクセスされるWebページで処理されるため、
+  // アプリ内で直接パスワードを再設定するこのロジックは使われない可能性が高いです。
+  // ここはFirebase Authenticationのパスワードリセットメールのリンク先で処理されるべきです。
   void _handleReset() {
     final newPassword = _newPasswordController.text;
     final confirmPassword = _confirmPasswordController.text;
@@ -800,6 +702,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     } else if (newPassword != confirmPassword) {
       _showMessage('パスワードが一致しません (Passwords do not match)');
     } else {
+      // TODO: Firebaseで新しいパスワードを設定するAPI呼び出し
+      // 通常、これはメールのリンク先のWebページで行われるため、ここには直接書かない
       _showMessage('パスワードを再設定しました (Password reset successful)');
       Navigator.popUntil(context, (route) => route.isFirst); // ログイン選択画面まで戻る
     }
@@ -897,9 +801,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   decoration: InputDecoration(
                     labelText: '新しいパスワード（確認）',
                     hintText: 'もう一度入力してください',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     prefixIcon: Icon(Icons.lock_reset, color: mainColor),
                     suffixIcon: IconButton(
                       icon: Icon(

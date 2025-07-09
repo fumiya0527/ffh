@@ -1,7 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart'; // Firebase Coreをインポート
+import 'firebase_options.dart'; // Firebase Optionsをインポート
 import 'start.dart';
 
-void main() {
+void main() async { // main関数を非同期にする
+  WidgetsFlutterBinding.ensureInitialized(); // Flutterバインディングの初期化を保証
+
+  try {
+    await Firebase.initializeApp( // Firebaseを初期化
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    // print('Firebase Initialized Successfully!'); // デバッグログは削除済み
+  } catch (e) {
+    // print('Failed to initialize Firebase: $e'); // デバッグログは削除済み
+    // Firebase初期化失敗時のエラーハンドリング（例: ユーザーへの通知）
+    // runApp(ErrorApp(errorMessage: 'Firebaseの初期化に失敗しました: $e')); のような対処も可能
+  }
+
   runApp(MyApp());
 }
 
@@ -13,46 +28,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.teal, // テーマのプライマリーカラーをティール系に
       ),
-      home: const StartScreen(), 
+      home: const StartScreen(),
     );
   }
 }
-
-//↓user_conditionだけを開きたいときここより上をコメントアウトして下を使う↓
-
-// import 'package:flutter/material.dart';
-// import 'user_condition.dart'; // UserCondition へのパスをインポート
-// // import 'package:your_app_name/user_regist.dart'; // user_regist を使わない場合はコメントアウト
-
-// void main() {
-//   runApp(const MyApp());
-// }
-
-// class MyApp extends StatelessWidget {
-//   const MyApp({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       title: '利用条件デモ', // タイトルを適切に修正
-//       theme: ThemeData(
-//         primarySwatch: Colors.blue,
-//       ),
-//       home: const UserCondition( // ★ここを UserCondition に変更
-//         // UserCondition ウィジェットの必須パラメータをダミーデータで渡す
-//         name: 'テスト ユーザー',
-//         birthdate: '1990/01/01',
-//         email: 'test@example.com',
-//         password: 'password123',
-//         nationality: '日本 (Japan)',
-//         phoneNumber: '090-1234-5678',
-//         residenceStatus: '', // 日本国籍の場合など、空文字列でOK
-//         residenceCardNumber: '', // 同上
-//         emergencyContactName: '緊急連絡先',
-//         emergencyContactPhoneNumber: '090-9876-5432',
-//         emergencyContactRelationship: 'その他 (Other)',
-//         stayDurationInJapan: '', // 同上
-//       ),
-//     );
-//   }
-// }
