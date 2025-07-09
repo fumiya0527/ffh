@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'quiz_question.dart'; // QuizQuestionクラスをインポート
+import 'house_select.dart';
 // import 'main.dart'; // MyAppはmain.dartにあるため、ここでは不要（もしmain関数がここにあったら削除）
-// import 'home_screen.dart'; // 例: クイズ完了後の遷移先としてホーム画面を想定
+ // 例: クイズ完了後の遷移先としてホーム画面を想定
 
 // URLを開くための非同期関数
 Future<void> _launchURL(String urlString) async {
@@ -308,9 +309,12 @@ class _QuizScreenState extends State<QuizScreen> {
                   ),
                   onPressed: () {
                     Navigator.of(dialogContext).pop(); // ダイアログを閉じる
-                    // アプリのメインコンテンツへ遷移（例: 物件検索ホーム画面）
-                    // ここでは、StartScreenまで戻ることで、アプリの初期画面に戻るようにします
-                    Navigator.of(context).popUntil((route) => route.isFirst);
+
+                    // 正しい画面遷移のコード
+                    Navigator.push( // または Navigator.pushAndRemoveUntil
+                      context,
+                      MaterialPageRoute(builder: (context) => const HouseSelectScreen()), // あなたのクラス名に合わせる
+                    );
                   },
                 ),
               )

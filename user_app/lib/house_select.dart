@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import 'firebase_options.dart'; 
 import 'package:ffh/house_select.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // void main() async {
 //   WidgetsFlutterBinding.ensureInitialized();
@@ -24,8 +25,8 @@ import 'package:ffh/house_select.dart';
 //   runApp(const MyApp());
 // }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class HouseSelectScreen extends StatelessWidget {
+  const HouseSelectScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +58,7 @@ class _AppRootScreenState extends State<AppRootScreen> {
     UserInterestStatusScreen(currentUserId: 'user_abc_123'),
     SettingsScreen(),
   ];
+  
 
   void _onItemTapped(int index) {
     setState(() {
