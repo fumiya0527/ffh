@@ -1,20 +1,16 @@
+// user_regist.dart
+
 import 'package:flutter/material.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // ★追加: Firebase Authenticationのインポート
+// import 'package:firebase_auth/firebase_auth.dart'; // ここでは不要になる
+// import 'package:cloud_firestore/cloud_firestore.dart'; // ここでは不要になる
 import 'user_condition.dart';
 import 'terms_of_service.dart';
-import 'house_select.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart'; 
-import 'firebase_options.dart';
-
+// import 'house_select.dart'; // 直接遷移しないので不要
 
 class UserRegistrationScreen extends StatefulWidget {
-  const UserRegistrationScreen({super.key}); // super.keyを追加
+  const UserRegistrationScreen({super.key});
 
   @override
   _UserRegistrationScreenState createState() => _UserRegistrationScreenState();
@@ -129,103 +125,60 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
     );
   }
 
-  // ★追加: Firebase Authentication を使ったユーザー登録メソッド
-  Future<void> _registerUser() async {
-    if (!_formKey.currentState!.validate() || !_agreeToTerms) {
-      _showMessage('入力にエラーがあります。すべての項目を正しく入力し、利用規約に同意してください。 (There are errors in the input. Please fill in all fields correctly and agree to the terms of use.)');
-      return;
-    }
+  // ★変更: _registerUser メソッドを削除し、直接Navigator.pushでUserConditionに情報を渡す
+  // Firebaseへの保存処理はUserConditionに移動する
+  void _navigateToUserCondition() {
+    if (_formKey.currentState!.validate() && _agreeToTerms) {
+      final String formattedBirthdate = DateFormat('yyyy/MM/dd').format(_birthDate!);
+      final String finalResidenceStatus = _isJapanese ? '' : (_residenceStatus ?? '');
+      final String finalResidenceCardNumber = _isJapanese ? '' : _residenceCardNumber;
+      final String finalStayDurationInJapan = _isJapanese ? '' : (_stayDurationInJapan ?? '');
 
-    try {
-      // Firebase Authentication でユーザーを作成
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _email,
-        password: _password,
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => UserCondition(
+            familyName: _familyName, // 苗字を渡す
+            givenName: _givenName,   // 名前を渡す
+            email: _email,
+            password: _password,
+            birthdate: formattedBirthdate,
+            nationality: _nationality,
+            phoneNumber: _phoneNumber,
+            residenceStatus: finalResidenceStatus,
+            residenceCardNumber: finalResidenceCardNumber,
+            emergencyContactName: _emergencyContactName,
+            emergencyContactPhoneNumber: _emergencyContactPhoneNumber,
+            emergencyContactRelationship: _emergencyContactRelationship!,
+            stayDurationInJapan: finalStayDurationInJapan,
+            selectedLanguages: _selectedLanguages, // 選択された言語も渡す
+            currentAddress: _currentAddress, // 現在の住所も渡す
+            // contract & move-in conditions は user_condition.dart で入力されるのでここでは渡さない
+          ),
+        ),
       );
-
-      // ユーザー登録成功後、追加情報をFirebase Firestoreに保存
-      if (userCredential.user != null) {
-        final String formattedBirthdate = DateFormat('yyyy/MM/dd').format(_birthDate!);
-        final String finalResidenceStatus = _isJapanese ? '' : (_residenceStatus ?? '');
-        final String finalResidenceCardNumber = _isJapanese ? '' : _residenceCardNumber;
-        final String finalStayDurationInJapan = _isJapanese ? '' : (_stayDurationInJapan ?? '');
-
-        // Firestoreにユーザープロファイルデータを保存
-        await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
-          'uid': userCredential.user!.uid,
-          'familyName': _familyName,
-          'givenName': _givenName,
-          'email': _email,
-          'birthdate': formattedBirthdate,
-          'nationality': _nationality,
-          'phoneNumber': _phoneNumber,
-          'selectedLanguages': _selectedLanguages,
-          'currentAddress': _currentAddress,
-          'residenceStatus': finalResidenceStatus,
-          'residenceCardNumber': finalResidenceCardNumber,
-          'emergencyContactName': _emergencyContactName,
-          'emergencyContactPhoneNumber': _emergencyContactPhoneNumber,
-          'emergencyContactRelationship': _emergencyContactRelationship!,
-          'stayDurationInJapan': finalStayDurationInJapan,
-          'isOwner': false, // このユーザーはオーナーではない
-          'registrationTimestamp': FieldValue.serverTimestamp(),
-          // 以下はuser_condition.dartで入力される希望条件ですが、
-          // 登録時に一緒に保存するならここにフィールドを追加
-          // 現状は次の画面で入力されるので、ここでは含めません
-        });
-
-        _showMessage('登録が完了しました！ (Registration complete!)');
-
-        // 登録成功後、ユーザーをログイン状態のまま次の画面へ（例: HouseSelectScreen）
-        if (mounted) {
-          // UserCondition画面には行かずに、直接HouseSelectScreenへ
-          Navigator.pushAndRemoveUntil( // これまでのスタックをクリアして遷移
-            context,
-            MaterialPageRoute(builder: (context) => const HouseSelectScreen()),
-            (Route<dynamic> route) => false,
-          );
-        }
-      }
-    } on FirebaseAuthException catch (e) {
-      String message = '登録に失敗しました (Registration failed)';
-      if (e.code == 'weak-password') {
-        message = 'パスワードが弱すぎます。6文字以上にしてください。 (The password provided is too weak. Please use 6 or more characters.)';
-      } else if (e.code == 'email-already-in-use') {
-        message = 'このメールアドレスは既に使用されています。 (The email address is already in use by another account.)';
-      } else if (e.code == 'invalid-email') {
-        message = 'メールアドレスの形式が正しくありません。 (The email address is not valid.)';
-      }
-      _showMessage(message);
-    } catch (e) {
-      _showMessage('エラーが発生しました: ${e.toString()} (An error occurred: ${e.toString()})');
+    } else {
+      _showMessage('入力にエラーがあります。すべての項目を正しく入力し、利用規約に同意してください。 (There are errors in the input. Please fill in all fields correctly and agree to the terms of use.)');
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
     final Color mainBackgroundColor = const Color(0xFFEFF7F6);
     final Color mainColor = Colors.teal[800]!;
     final Color secondaryColor = Colors.teal;
-
-    // この変数はWidget buildのスコープに移動しました
-    String? _guarantorSupport;
-    String? _initialPaymentMethod;
-    String? _contractPeriod;
-    String? _screeningLanguageSupport;
     
-    final List<String> guarantorOptions = [
-      '不要 (Not required)', '保証会社利用可 (Guarantor company available)', '保証人必須 (Guarantor required)'
-    ];
-    final List<String> paymentMethodOptions = [
-      '現金 (Cash)', 'クレジットカード (Credit Card)', '銀行振込 (Bank Transfer)', 'その他 (Other)'
-    ];
-    final List<String> contractPeriodOptions = [
-      '1年未満 (Less than 1 year)', '1年 (1 year)', '2年 (2 years)', '2年以上 (More than 2 years)'
-    ];
-    
-    final List<String> screeningLanguageOptions = [
-      '日本語のみ (Japanese only)', '英語対応 (English support)', 'その他言語対応 (Other languages support)'
-    ];
+    // これらの変数はUserConditionで入力されるため、ここでは不要です。
+    // もしUserRegistrationScreenで入力させるなら、適切に状態を管理し、UserConditionに渡してください。
+    // String? _guarantorSupport;
+    // String? _initialPaymentMethod;
+    // String? _contractPeriod;
+    // String? _screeningLanguageSupport;
+    // final List<String> guarantorOptions = [ ];
+    // final List<String> paymentMethodOptions = [ ];
+    // final List<String> contractPeriodOptions = [ ];
+    // final List<String> screeningLanguageOptions = [ ];
 
     return Scaffold(
       appBar: AppBar(
@@ -723,53 +676,53 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                 ),
                 const SizedBox(height: 10),
                 const SizedBox(height: 30),
-                _buildSectionTitle('Contract & Move-in Conditions', '契約・入居に関する条件', mainColor, secondaryColor),
-                const SizedBox(height: 15),
-                _buildSubSectionTitle('Guarantor / Guarantor Company Support', '保証人 / 保証会社サポート'),
-                const SizedBox(height: 8),
-                _buildDropdownFormField(
-                  value: _guarantorSupport,
-                  items: guarantorOptions,
-                  onChanged: (val) => setState(() => _guarantorSupport = val!),
-                  labelText: '選んでください',
-                  icon: Icons.security,
-                  mainColor: mainColor,
-                ),
-                const SizedBox(height: 20),
-                _buildSubSectionTitle('Initial Payment Method', '初期費用の支払い方法'),
-                const SizedBox(height: 8),
-                _buildDropdownFormField(
-                  value: _initialPaymentMethod,
-                  items: paymentMethodOptions,
-                  onChanged: (val) => setState(() => _initialPaymentMethod = val!),
-                  labelText: '選んでください',
-                  icon: Icons.payment,
-                  mainColor: mainColor,
-                ),
-                const SizedBox(height: 20),
-                _buildSubSectionTitle('Contract Period', '契約期間'),
-                const SizedBox(height: 8),
-                _buildDropdownFormField(
-                  value: _contractPeriod,
-                  items: contractPeriodOptions,
-                  onChanged: (val) => setState(() => _contractPeriod = val!),
-                  labelText: '選んでください',
-                  icon: Icons.calendar_today,
-                  mainColor: mainColor,
-                ),
-                const SizedBox(height: 20),
-                _buildSubSectionTitle('Screening Language Support', '入居審査の言語サポート'),
-                const SizedBox(height: 8),
-                _buildDropdownFormField(
-                  value: _screeningLanguageSupport,
-                  items: screeningLanguageOptions,
-                  onChanged: (val) => setState(() => _screeningLanguageSupport = val!),
-                  labelText: '選んでください',
-                  icon: Icons.translate,
-                  mainColor: mainColor,
-                ),
-                const SizedBox(height: 40),
-
+                // 契約・入居に関する条件のセクションはUserConditionで入力されるため、ここでは削除しました。
+                // _buildSectionTitle('Contract & Move-in Conditions', '契約・入居に関する条件', mainColor, secondaryColor),
+                // const SizedBox(height: 15),
+                // _buildSubSectionTitle('Guarantor / Guarantor Company Support', '保証人 / 保証会社サポート'),
+                // const SizedBox(height: 8),
+                // _buildDropdownFormField(
+                //   value: _guarantorSupport,
+                //   items: guarantorOptions,
+                //   onChanged: (val) => setState(() => _guarantorSupport = val!),
+                //   labelText: '選んでください',
+                //   icon: Icons.security,
+                //   mainColor: mainColor,
+                // ),
+                // const SizedBox(height: 20),
+                // _buildSubSectionTitle('Initial Payment Method', '初期費用の支払い方法'),
+                // const SizedBox(height: 8),
+                // _buildDropdownFormField(
+                //   value: _initialPaymentMethod,
+                //   items: paymentMethodOptions,
+                //   onChanged: (val) => setState(() => _initialPaymentMethod = val!),
+                //   labelText: '選んでください',
+                //   icon: Icons.payment,
+                //   mainColor: mainColor,
+                // ),
+                // const SizedBox(height: 20),
+                // _buildSubSectionTitle('Contract Period', '契約期間'),
+                // const SizedBox(height: 8),
+                // _buildDropdownFormField(
+                //   value: _contractPeriod,
+                //   items: contractPeriodOptions,
+                //   onChanged: (val) => setState(() => _contractPeriod = val!),
+                //   labelText: '選んでください',
+                //   icon: Icons.calendar_today,
+                //   mainColor: mainColor,
+                // ),
+                // const SizedBox(height: 20),
+                // _buildSubSectionTitle('Screening Language Support', '入居審査の言語サポート'),
+                // const SizedBox(height: 8),
+                // _buildDropdownFormField(
+                //   value: _screeningLanguageSupport,
+                //   items: screeningLanguageOptions,
+                //   onChanged: (val) => setState(() => _screeningLanguageSupport = val!),
+                //   labelText: '選んでください',
+                //   icon: Icons.translate,
+                //   mainColor: mainColor,
+                // ),
+                // const SizedBox(height: 40),
 
                 CheckboxListTile(
                   title: Column(
@@ -813,17 +766,17 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                       ),
                       elevation: 5,
                     ),
-                    onPressed: _registerUser, // ★変更: 登録処理を_registerUserメソッドに委譲
+                    onPressed: _navigateToUserCondition, // ★変更: UserConditionへの遷移メソッドを呼び出す
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Register',
+                          'Next',
                           style: TextStyle(fontSize: 14, color: Colors.white70),
                         ),
                         const SizedBox(height: 2),
                         const Text(
-                          '登録する',
+                          '次へ',
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -837,6 +790,8 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
       ),
     );
   }
+
+  // ヘルパーメソッドは変更なし
   Widget _buildSectionTitle(String englishTitle, String japaneseTitle, Color mainColor, Color secondaryColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -896,3 +851,4 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
     );
   }
 }
+

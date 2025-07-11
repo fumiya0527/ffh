@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart'; // Firebase Coreをインポート
-import 'firebase_options.dart'; // Firebase Optionsをインポート
+import 'package:firebase_core/firebase_core.dart'; 
+import 'firebase_options.dart'; 
 import 'start.dart';
 
 void main() async { // main関数を非同期にする
@@ -17,10 +17,12 @@ void main() async { // main関数を非同期にする
     // runApp(ErrorApp(errorMessage: 'Firebaseの初期化に失敗しました: $e')); のような対処も可能
   }
 
-  runApp(MyApp());
+  runApp(const MyApp()); // constを追加
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key}); // const constructor
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -28,7 +30,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.teal, // テーマのプライマリーカラーをティール系に
       ),
-      home: const StartScreen(),
+      home: const StartScreen(), 
     );
   }
 }
