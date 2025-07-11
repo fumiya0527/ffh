@@ -176,8 +176,8 @@ class _UserConditionState extends State<UserCondition> {
                 RangeSlider(
                   values: _currentRentRange,
                   min: 0,
-                  max: 500000,
-                  divisions: 47,
+                  max: 200000,
+                  divisions: 20,
                   labels: RangeLabels(
                     _currentRentRange.start.round().toString(),
                     _currentRentRange.end.round().toString(),

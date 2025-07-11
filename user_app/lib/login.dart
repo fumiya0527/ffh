@@ -112,7 +112,7 @@ class LoginChoiceScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const UserRegistrationScreen()), // constを追加
+                        MaterialPageRoute(builder: (context) =>  UserRegistrationScreen()), // constを追加
                       );
                     },
                   ),
