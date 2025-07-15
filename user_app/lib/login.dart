@@ -1,43 +1,44 @@
+
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Firebase Authentication
-import 'package:cloud_firestore/cloud_firestore.dart'; // Cloud Firestore
+import 'package:firebase_auth/firebase_auth.dart'; // ★追加: Firebase Authenticationのインポート
+import 'package:ffh/user_regist.dart';
+import 'house_select.dart';
+import 'manner.dart';
+import 'quiz_question.dart';
 
-// アプリ内の画面へのパス
-import 'package:ffh/user_regist.dart'; // ユーザー登録画面
-import 'package:ffh/house_select.dart'; // 物件選択画面
-import 'package:ffh/manner.dart'; // マナー画面 (QuizScreenが含まれる)
-import 'package:ffh/user_condition.dart'; // ユーザー希望条件入力画面
-
-// ログイン選択画面
 class LoginChoiceScreen extends StatelessWidget {
-  const LoginChoiceScreen({super.key});
+  const LoginChoiceScreen({super.key}); // const constructor
 
   @override
   Widget build(BuildContext context) {
-    final Color mainBackgroundColor = const Color(0xFFEFF7F6);
-    final Color mainColor = Colors.teal[800]!;
-    final Color secondaryColor = Colors.teal;
+    // アプリ全体で使うメインの色を定義
+    final Color mainBackgroundColor = const Color(0xFFEFF7F6); // やさしい背景色
+    final Color mainColor = Colors.teal[800]!; // 濃いティール
+    final Color secondaryColor = Colors.teal; // 明るいティール
 
     return Scaffold(
-      backgroundColor: mainBackgroundColor,
+      backgroundColor: mainBackgroundColor, // 背景色を統一
       body: SafeArea(
         child: Center(
-          child: SingleChildScrollView(
+          child: SingleChildScrollView( // 画面サイズが小さい場合にスクロール可能にする
             padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                // アプリのロゴやアイコン (仮のアイコンを使用)
                 Icon(
-                  Icons.home_work_rounded,
+                  Icons.home_work_rounded, // 家と仕事のアイコン
                   size: 100,
-                  color: mainColor,
+                  color: mainColor, // メインカラーに合わせる
                 ),
                 const SizedBox(height: 20),
+
+                // ウェルカムメッセージとアプリ名
                 Column(
                   children: [
                     Text(
-                      'Welcome',
+                      'Welcome', // 英語を上に小さく
                       style: TextStyle(
                         fontSize: 18,
                         color: mainColor.withOpacity(0.8),
@@ -46,7 +47,7 @@ class LoginChoiceScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'ようこそ',
+                      'ようこそ', // 優しい日本語を大きく
                       style: TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.bold,
@@ -61,16 +62,16 @@ class LoginChoiceScreen extends StatelessWidget {
                 Column(
                   children: [
                     Text(
-                      'Find your new life',
+                      'Find your new life', // 英語を上に小さく
                       style: TextStyle(
                         fontSize: 14,
-                        color: secondaryColor,
+                        color: secondaryColor, // サブカラー
                       ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'あなたの新しい暮らしを見つけよう',
+                      'あなたの新しい暮らしを見つけよう', // 優しい日本語を大きく
                       style: TextStyle(
                         fontSize: 20,
                         color: mainColor,
@@ -84,27 +85,27 @@ class LoginChoiceScreen extends StatelessWidget {
 
                 // 「はじめての方」ボタン
                 SizedBox(
-                  width: double.infinity,
-                  height: 55,
+                  width: double.infinity, // 幅を最大にする
+                  height: 55, // 高さを少し大きくする
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: mainColor,
-                      foregroundColor: Colors.white,
+                      backgroundColor: mainColor, // ボタンの背景色をメインカラーに
+                      foregroundColor: Colors.white, // ボタンのテキスト色
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                        borderRadius: BorderRadius.circular(30), // より丸い角
                       ),
-                      elevation: 5,
+                      elevation: 5, // 影を追加
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'First-time user',
+                          'First-time user', // 英語を上に小さく
                           style: TextStyle(fontSize: 14, color: Colors.white70),
                         ),
                         const SizedBox(height: 2),
                         const Text(
-                          'はじめての方',
+                          'はじめての方', // 優しい日本語を大きく
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -112,7 +113,7 @@ class LoginChoiceScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const UserRegistrationScreen()),
+                        MaterialPageRoute(builder: (context) =>  UserRegistrationScreen()), // constを追加
                       );
                     },
                   ),
@@ -125,8 +126,8 @@ class LoginChoiceScreen extends StatelessWidget {
                   height: 55,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: mainColor,
-                      foregroundColor: Colors.white,
+                      backgroundColor: mainColor, // ボタンの背景色をメインカラーに
+                      foregroundColor: Colors.white, // ボタンのテキスト色
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
@@ -136,12 +137,12 @@ class LoginChoiceScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Registered user',
+                          'Registered user', // 英語を上に小さく
                           style: TextStyle(fontSize: 14, color: Colors.white70),
                         ),
                         const SizedBox(height: 2),
                         const Text(
-                          '登録済みの方',
+                          '登録済みの方', // 優しい日本語を大きく
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -149,7 +150,7 @@ class LoginChoiceScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        MaterialPageRoute(builder: (context) => const LoginScreen()), // constを追加
                       );
                     },
                   ),
@@ -159,42 +160,43 @@ class LoginChoiceScreen extends StatelessWidget {
                 // 区切り線
                 Row(
                   children: [
-                    Expanded(child: Divider(color: Colors.grey.shade400)),
+                    Expanded(child: Divider(color: Colors.grey.shade400)), // 色を調整
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       child: Text(
                         'または (or)',
-                        style: TextStyle(color: Colors.grey[700]),
+                        style: TextStyle(color: Colors.grey[700]), // 色を調整
                       ),
                     ),
-                    Expanded(child: Divider(color: Colors.grey.shade400)),
+                    Expanded(child: Divider(color: Colors.grey.shade400)), // 色を調整
                   ],
                 ),
                 const SizedBox(height: 20),
 
-                // ソーシャルログインボタン (ダミー)
+                // ソーシャルログインボタン
                 SizedBox(
                   width: double.infinity,
                   height: 55,
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black87,
-                      side: BorderSide(color: Colors.grey.shade400),
+                      backgroundColor: Colors.white, // ボタンの背景色
+                      foregroundColor: Colors.black87, // テキストとアイコンの色
+                      side: BorderSide(color: Colors.grey.shade400), // 枠線の色を調整
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
                       elevation: 3,
                     ),
                     onPressed: () {
+                      // TODO: Googleログイン処理
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Googleログインは開発中です (Google login is under development)')),
                       );
                     },
                     icon: Image.network(
-                      'https://www.gstatic.com/images/branding/product/1x/google_glogo_color_20dp.png',
+                      'https://www.gstatic.com/images/branding/product/1x/google_glogo_color_20dp.png', // Googleロゴ
                       height: 24,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.g_mobiledata, size: 24),
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.g_mobiledata, size: 24), // エラー時のフォールバック
                     ),
                     label: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -218,20 +220,21 @@ class LoginChoiceScreen extends StatelessWidget {
                   height: 55,
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black87,
-                      side: BorderSide(color: Colors.grey.shade400),
+                      backgroundColor: Colors.white, // ボタンの背景色
+                      foregroundColor: Colors.black87, // テキストとアイコンの色
+                      side: BorderSide(color: Colors.grey.shade400), // 枠線の色を調整
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
                       elevation: 3,
                     ),
                     onPressed: () {
+                      // TODO: Appleログイン処理
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Appleログインは開発中です (Apple login is under development)')),
                       );
                     },
-                    icon: const Icon(Icons.apple, size: 24),
+                    icon: const Icon(Icons.apple, size: 24), // Appleロゴ
                     label: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -257,9 +260,9 @@ class LoginChoiceScreen extends StatelessWidget {
   }
 }
 
-// ログイン画面
+// LoginScreen (ログイン画面) - UIを改善
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key}); // const constructor
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -283,57 +286,22 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ログイン処理
-  Future<void> _loginUser() async {
+  // ★追加: ログイン処理
+    Future<void> _loginUser() async {
     try {
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
       _showMessage('ログインしました！ (Logged in successfully!)');
 
-      if (userCredential.user != null && mounted) {
-        // ユーザーのFirestoreドキュメントを読み込む
-        DocumentSnapshot userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userCredential.user!.uid)
-            .get();
-
-        bool hasCompletedConditions = userDoc.exists && (userDoc.data() as Map<String, dynamic>?)?['hasCompletedConditions'] == true;
-
-        if (hasCompletedConditions) {
-          // 希望条件を既に登録済みの場合、直接QuizScreenへ
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const QuizScreen()),
-            (Route<dynamic> route) => false,
-          );
-        } else {
-          // 希望条件が未登録の場合、UserConditionへ
-          final Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>? ?? {};
-
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => UserCondition(
-              familyName: userData['familyName'] ?? '',
-              givenName: userData['givenName'] ?? '',
-              email: userData['email'] ?? '',
-              password: _passwordController.text, // パスワードはFirestoreに保存されていないのでログイン時のものを渡す（非推奨）
-              birthdate: userData['birthdate'] ?? '',
-              nationality: userData['nationality'] ?? '',
-              phoneNumber: userData['phoneNumber'] ?? '',
-              residenceStatus: userData['residenceStatus'] ?? '',
-              residenceCardNumber: userData['residenceCardNumber'] ?? '',
-              emergencyContactName: userData['emergencyContactName'] ?? '',
-              emergencyContactPhoneNumber: userData['emergencyContactPhoneNumber'] ?? '',
-              emergencyContactRelationship: userData['emergencyContactRelationship'] ?? '',
-              stayDurationInJapan: userData['stayDurationInJapan'] ?? '',
-              selectedLanguages: List<String>.from(userData['selectedLanguages'] ?? []),
-              currentAddress: userData['currentAddress'] ?? '',
-            )),
-            (Route<dynamic> route) => false,
-          );
-        }
+      // ログイン成功後、QuizScreenへ遷移
+      if (mounted) {
+        Navigator.pushAndRemoveUntil( // これまでのスタックをクリアして遷移
+          context,
+          MaterialPageRoute(builder: (context) => const QuizScreen()), // ★ここをQuizScreenに変更
+          (Route<dynamic> route) => false,
+        );
       }
     } on FirebaseAuthException catch (e) {
       String message;
@@ -346,21 +314,19 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         message = 'ログインに失敗しました: ${e.message ?? '不明なエラー'} (Login failed: ${e.message ?? 'Unknown error'})';
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      _showMessage(message);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('エラーが発生しました: ${e.toString()} (An error occurred: ${e.toString()})')),
-      );
+      _showMessage('エラーが発生しました: ${e.toString()} (An error occurred: ${e.toString()})');
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
-    final Color mainBackgroundColor = const Color(0xFFEFF7F6);
-    final Color mainColor = Colors.teal[800]!;
-    final Color secondaryColor = Colors.teal;
+    // アプリ全体で使うメインの色を定義
+    final Color mainBackgroundColor = const Color(0xFFEFF7F6); // やさしい背景色
+    final Color mainColor = Colors.teal[800]!; // 濃いティール
+    final Color secondaryColor = Colors.teal; // 明るいティール
 
     return Scaffold(
       appBar: AppBar(
@@ -369,7 +335,7 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             Text(
               'Log in',
-              style: TextStyle(fontSize: 14, color: Colors.white70),
+              style: TextStyle(fontSize: 14, color: Colors.white70), // 白の薄め
             ),
             const SizedBox(height: 2),
             const Text(
@@ -378,12 +344,12 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ],
         ),
-        backgroundColor: mainColor,
-        foregroundColor: Colors.white,
-        centerTitle: false,
+        backgroundColor: mainColor, // AppBarの色を統一
+        foregroundColor: Colors.white, // タイトル色
+        centerTitle: false, // タイトルを左寄せに
       ),
       body: Container(
-        color: mainBackgroundColor,
+        color: mainBackgroundColor, // 単色背景に統一
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -394,7 +360,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     Text(
                       'Log in to your account',
-                      style: TextStyle(fontSize: 16, color: secondaryColor),
+                      style: TextStyle(fontSize: 16, color: secondaryColor), // サブカラー
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 4),
@@ -403,13 +369,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: mainColor,
+                        color: mainColor, // メインカラー
                       ),
                       textAlign: TextAlign.center,
                     ),
                   ],
                 ),
                 const SizedBox(height: 40),
+
+                // メール入力
                 TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -419,7 +387,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    prefixIcon: Icon(Icons.email, color: mainColor),
+                    prefixIcon: Icon(Icons.email, color: mainColor), // アイコン色もメインカラーに
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.9),
                   ),
@@ -429,6 +397,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
                 const SizedBox(height: 20),
+
+                // パスワード入力 + アイコン表示切替
                 TextField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
@@ -438,7 +408,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    prefixIcon: Icon(Icons.lock, color: mainColor),
+                    prefixIcon: Icon(Icons.lock, color: mainColor), // アイコン色もメインカラーに
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -459,13 +429,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
                 const SizedBox(height: 15),
+
+                // パスワードを忘れた方ボタン
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const EmailVerificationScreen()),
+                        MaterialPageRoute(builder: (context) => const EmailVerificationScreen()), // constを追加
                       );
                     },
                     child: Column(
@@ -473,31 +445,33 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         Text(
                           'Forgot password?',
-                          style: TextStyle(fontSize: 12, color: secondaryColor.withOpacity(0.8)),
+                          style: TextStyle(fontSize: 12, color: secondaryColor.withOpacity(0.8)), // サブカラー
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'パスワードを忘れた方',
-                          style: TextStyle(fontSize: 14, color: mainColor, fontWeight: FontWeight.bold),
+                          style: TextStyle(fontSize: 14, color: mainColor, fontWeight: FontWeight.bold), // メインカラー
                         ),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 30),
+
+                // ログインボタン
                 SizedBox(
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: mainColor,
+                      backgroundColor: mainColor, // メインカラー
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
                       elevation: 5,
                     ),
-                    onPressed: _loginUser,
+                    onPressed: _loginUser, // ★変更: ログイン処理を_loginUserメソッドに委譲
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -526,8 +500,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
+// EmailVerificationScreen (メール認証コード送信画面) - UIを改善
 class EmailVerificationScreen extends StatefulWidget {
-  const EmailVerificationScreen({super.key});
+  const EmailVerificationScreen({super.key}); // const constructor
 
   @override
   State<EmailVerificationScreen> createState() => _EmailVerificationScreenState();
@@ -548,6 +523,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     );
   }
 
+  // ★追加: パスワードリセットメール送信
   Future<void> _sendPasswordResetEmail() async {
     final email = _emailController.text.trim();
 
@@ -560,7 +536,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
       _showMessage('パスワードリセットのメールを送信しました。ご確認ください。 (Password reset email sent. Please check your inbox.)');
       if (mounted) {
-        Navigator.pop(context);
+        Navigator.pop(context); // 認証コード入力画面には行かずに前の画面に戻る
       }
     } on FirebaseAuthException catch (e) {
       String message;
@@ -577,11 +553,13 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
-    final Color mainBackgroundColor = const Color(0xFFEFF7F6);
-    final Color mainColor = Colors.teal[800]!;
-    final Color secondaryColor = Colors.teal;
+    // アプリ全体で使うメインの色を定義
+    final Color mainBackgroundColor = const Color(0xFFEFF7F6); // やさしい背景色
+    final Color mainColor = Colors.teal[800]!; // 濃いティール
+    final Color secondaryColor = Colors.teal; // 明るいティール
 
     return Scaffold(
       appBar: AppBar(
@@ -604,7 +582,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
         centerTitle: false,
       ),
       body: Container(
-        color: mainBackgroundColor,
+        color: mainBackgroundColor, // 単色背景に統一
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
@@ -657,7 +635,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                     ),
                     elevation: 5,
                   ),
-                  onPressed: _sendPasswordResetEmail,
+                  onPressed: _sendPasswordResetEmail, // ★変更: パスワードリセットメール送信
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -685,9 +663,9 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   }
 }
 
-// ResetPasswordScreen (パスワード再設定画面)
+
 class ResetPasswordScreen extends StatefulWidget {
-  const ResetPasswordScreen({super.key});
+  const ResetPasswordScreen({super.key}); // const constructor
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -713,6 +691,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
+  // Firebaseのパスワードリセットフローでは、通常この画面はメール内のリンクから直接アクセスされるWebページで処理されるため、
+  // アプリ内で直接パスワードを再設定するこのロジックは使われない可能性が高いです。
+  // ここはFirebase Authenticationのパスワードリセットメールのリンク先で処理されるべきです。
   void _handleReset() {
     final newPassword = _newPasswordController.text;
     final confirmPassword = _confirmPasswordController.text;
@@ -722,16 +703,19 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     } else if (newPassword != confirmPassword) {
       _showMessage('パスワードが一致しません (Passwords do not match)');
     } else {
+      // TODO: Firebaseで新しいパスワードを設定するAPI呼び出し
+      // 通常、これはメールのリンク先のWebページで行われるため、ここには直接書かない
       _showMessage('パスワードを再設定しました (Password reset successful)');
-      Navigator.popUntil(context, (route) => route.isFirst);
+      Navigator.popUntil(context, (route) => route.isFirst); // ログイン選択画面まで戻る
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final Color mainBackgroundColor = const Color(0xFFEFF7F6);
-    final Color mainColor = Colors.teal[800]!;
-    final Color secondaryColor = Colors.teal;
+    // アプリ全体で使うメインの色を定義
+    final Color mainBackgroundColor = const Color(0xFFEFF7F6); // やさしい背景色
+    final Color mainColor = Colors.teal[800]!; // 濃いティール
+    final Color secondaryColor = Colors.teal; // 明るいティール
 
     return Scaffold(
       appBar: AppBar(
@@ -754,7 +738,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         centerTitle: false,
       ),
       body: Container(
-        color: mainBackgroundColor,
+        color: mainBackgroundColor, // 単色背景に統一
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -778,6 +762,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   ],
                 ),
                 const SizedBox(height: 30),
+
+                // 新しいパスワード入力欄
                 TextField(
                   controller: _newPasswordController,
                   obscureText: _obscureNewPassword,
@@ -808,15 +794,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
                 const SizedBox(height: 20),
+                
+                // 新しいパスワード（確認）
                 TextField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
                   decoration: InputDecoration(
                     labelText: '新しいパスワード（確認）',
                     hintText: 'もう一度入力してください',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     prefixIcon: Icon(Icons.lock_reset, color: mainColor),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -838,6 +824,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
                 const SizedBox(height: 30),
+
                 SizedBox(
                   width: double.infinity,
                   height: 55,

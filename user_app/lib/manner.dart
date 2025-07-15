@@ -82,7 +82,7 @@ class MannerScreen extends StatelessWidget {
                   height: 55,
                   child: ElevatedButton(
                     onPressed: () {
-                      _launchURL('https://drive.google.com/file/d/120kXCEsqjI9p9plddjQa1j25sqQY9PTH/view?usp=drive_link');
+                      _launchURL('https://drive.google.com/file/d/1iLa-dmVviF42X1uSbgsNc_op-fjcmc3d/view?usp=drive_link');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: mainColor,
