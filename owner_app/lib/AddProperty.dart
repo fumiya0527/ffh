@@ -62,6 +62,7 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
 
   String? _selectedTown;
   List<String> _townsForSelectedCity = []; 
+  
 
   final Map<String, List<String>> _townsByCity = {
     '神戸市東灘区': ['青木', '魚崎北町', '魚崎中町', '魚崎西町', '魚崎浜町', '魚崎南町', '岡本', '鴨子ヶ原', '北青木',
@@ -203,6 +204,7 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
         'distanceToStation': _selectedDistanceToStation!,
         'amenities': _amenities.where((item) => item['checked']).map((item) => item['title']).toList(),
         'timestamp': FieldValue.serverTimestamp(),
+        
       };
 
       try {
