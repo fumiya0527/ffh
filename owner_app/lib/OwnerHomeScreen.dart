@@ -31,7 +31,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   void initState() {
     super.initState();
     _widgetOptions = <Widget>[
-      OwnerPersonalInfoScreen(ownerId: widget.currentOwnerId),
+      //OwnerPersonalInfoScreen(ownerId: widget.currentOwnerId),
       OwnedPropertiesListScreen(currentOwnerId: widget.currentOwnerId),
       const AddPropertyScreen(),
     ];
@@ -67,10 +67,10 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
+          /*BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: '個人情報',
-          ),
+          ),*/
           BottomNavigationBarItem(
             icon: Icon(Icons.apartment),
             label: '物件一覧',
@@ -90,7 +90,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   }
 }
 
-class OwnerPersonalInfoScreen extends StatelessWidget {
+/*class OwnerPersonalInfoScreen extends StatelessWidget {
   final String ownerId;
   const OwnerPersonalInfoScreen({super.key, required this.ownerId});
 
@@ -104,4 +104,4 @@ class OwnerPersonalInfoScreen extends StatelessWidget {
       ),
     );
   }
-}
+}*/
