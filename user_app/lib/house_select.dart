@@ -1,13 +1,10 @@
-// user_app/lib/main.dart (ユーザー側主要機能とアプリ全体構造)
-
-
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import 'firebase_options.dart'; 
-import 'package:ffh/house_select.dart';
+import 'package:ffh/house_select.dart'; // ffh/house_select.dart のパスを正確に
 import 'package:firebase_auth/firebase_auth.dart';
 
 // void main() async {
@@ -53,13 +50,14 @@ class AppRootScreen extends StatefulWidget {
 
 class _AppRootScreenState extends State<AppRootScreen> {
   int _selectedIndex = 0;
+  // UserInterestStatusScreen の currentUserId は、実際のログインユーザーのUIDに置き換える必要があります
+  // 例: UserInterestStatusScreen(currentUserId: FirebaseAuth.instance.currentUser?.uid ?? 'default_guest_id'),
   static const List<Widget> _widgetOptions = <Widget>[
     MainScreen(),
-    UserInterestStatusScreen(currentUserId: 'user_abc_123'),
+    UserInterestStatusScreen(currentUserId: 'user_abc_123'), // ダミーID。要修正。
     SettingsScreen(),
   ];
   
-
 
   void _onItemTapped(int index) {
     setState(() {
@@ -102,13 +100,170 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
+  // ユーザーの希望条件を格納する変数
+  Map<String, dynamic>? _userDesiredConditions;
+  // ユーザーの希望に合致した物件を格納するリスト
+  List<Map<String, dynamic>> _matchingProperties = [];
+
+  // Firestoreのインスタンス
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // ダミーの物件画像データ (Firebaseから取得したデータで表示する場合は、このリストは不要になります)
   final List<List<List<String>>> propertyImages = [
     [['assets/home1.jpg', 'assets/home1_1.jpg', 'assets/home1_2.jpg'] ,['manRSK0lpWSBp24da51bKzQw2li2']], // 'manRSK0lpWSBp24da51bKzQw2li2' が物件ID
     [['assets/home2.jpg', 'assets/home2_1.jpg'],[ 'guLSsrP22ETfWOHEuCU3OuKzv6P2']], // 'guLSsrP22ETfWOHEuCU3OuKzv6P2' が物件ID
     [['assets/home3.jpg', 'assets/home3_1.jpg'],[ 'guLSsrP22ETfWOHEuCU3OuKzv6P2']], // 'guLSsrP22ETfWOHEuCU3OuKzv6P2' が物件ID
   ];
+  int currentIndex = 0; // 現在表示している物件のインデックス (ダミーデータ用)
 
-  int currentIndex = 0; // 現在表示している物件のインデックス
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserAndProperties(); // ユーザー条件と物件データを読み込む
+  }
+
+  // ユーザーの希望条件をFirestoreから取得する関数
+  Future<void> _fetchUserDesiredConditions() async {
+    User? currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      print('ユーザーがログインしていません。');
+      // ログイン画面へリダイレクトするなどの処理をここに追加することも検討
+      return;
+    }
+
+    try {
+      DocumentSnapshot userDoc = await _firestore.collection('user_ID').doc(currentUser.uid).get();
+      if (userDoc.exists && userDoc.data() != null) {
+        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+        setState(() {
+          // desiredConditionsが存在しない可能性も考慮し、nullチェックを追加
+          _userDesiredConditions = userData['desiredConditions'] as Map<String, dynamic>?;
+          print('ユーザー希望条件を読み込みました: $_userDesiredConditions');
+        });
+      } else {
+        print('ユーザーの希望条件が見つかりません。');
+      }
+    } catch (e) {
+      print('ユーザー希望条件の取得中にエラーが発生しました: $e');
+    }
+  }
+
+  // 物件をフィルタリングする関数
+  Future<void> _filterProperties() async {
+    if (_userDesiredConditions == null) {
+      print('ユーザーの希望条件がまだ読み込まれていないか、取得できませんでした。');
+      // 例: スナックバーでユーザーに希望条件の設定を促す
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('物件を絞り込むには、まず「あなたの状況」画面で希望条件を設定してください。')),
+      );
+      return;
+    }
+
+    try {
+      QuerySnapshot propertiesSnapshot = await _firestore.collection('properties').get();
+      List<Map<String, dynamic>> allProperties = propertiesSnapshot.docs
+          .map((doc) => doc.data() as Map<String, dynamic>)
+          .toList();
+
+      List<Map<String, dynamic>> tempMatchingProperties = [];
+
+      for (var property in allProperties) {
+        bool matches = _checkPropertyMatches(property, _userDesiredConditions!);
+        if (matches) {
+          tempMatchingProperties.add(property);
+        }
+      }
+
+      setState(() {
+        _matchingProperties = tempMatchingProperties;
+        print('合致する物件の数: ${_matchingProperties.length}');
+        if (_matchingProperties.isEmpty) {
+          print('合致する物件がありませんでした。');
+        } else {
+          _matchingProperties.forEach((p) => print('合致した物件: ${p['propertyName']} (ID: ${p['ownerId']})'));
+        }
+      });
+    } catch (e) {
+      print('物件のフィルタリング中にエラーが発生しました: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('物件のフィルタリング中にエラーが発生しました: ${e.toString()}')),
+      );
+    }
+  }
+
+  // 個別の物件がユーザー条件に合致するかを判定するロジック
+  bool _checkPropertyMatches(Map<String, dynamic> property, Map<String, dynamic> desired) {
+    // 1. 家賃範囲の比較
+    int propertyRent = property['rent'] as int? ?? 0;
+    int desiredRentMin = desired['rentRangeMin'] as int? ?? 0;
+    int desiredRentMax = desired['rentRangeMax'] as int? ?? 200000; 
+
+    if (propertyRent < desiredRentMin || propertyRent > desiredRentMax) {
+      return false;
+    }
+
+    // 2. 希望エリア (city, town) の比較
+    String propertyCity = property['city'] as String? ?? '';
+    String propertyTown = property['town'] as String? ?? '';
+    String desiredCity = desired['city'] as String? ?? '';
+    String desiredTown = desired['town'] as String? ?? '';
+
+    // 希望エリアが設定されている場合のみ比較
+    if (desiredCity.isNotEmpty && propertyCity != desiredCity) {
+      return false;
+    }
+    if (desiredTown.isNotEmpty && propertyTown != desiredTown) {
+      return false;
+    }
+
+    // 3. 築年数の比較 (UserConditionもPropertyRegistrationScreenも日本語のみで保存されている前提)
+    String propertyBuildingAge = property['buildingAge'] as String? ?? '';
+    String desiredBuildingAge = desired['buildingAge'] as String? ?? '';
+    if (desiredBuildingAge.isNotEmpty && propertyBuildingAge != desiredBuildingAge) {
+      return false;
+    }
+
+    // 4. 間取りの比較 (UserConditionもPropertyRegistrationScreenも日本語のみで保存されている前提)
+    String propertyFloorPlan = property['floorPlan'] as String? ?? '';
+    String desiredLayout = desired['selectedLayout'] as String? ?? '';
+    if (desiredLayout.isNotEmpty && propertyFloorPlan != desiredLayout) {
+      return false;
+    }
+
+    // 5. 駅からの距離の比較 (UserConditionもPropertyRegistrationScreenも日本語のみで保存されている前提)
+    String propertyDistanceToStation = property['distanceToStation'] as String? ?? '';
+    String desiredDistanceToStation = desired['distanceToStation'] as String? ?? '';
+    if (desiredDistanceToStation.isNotEmpty && propertyDistanceToStation != desiredDistanceToStation) {
+      return false;
+    }
+
+    // 6. 設備・特徴 (amenities) の比較
+    // 物件が持つamenities (List<dynamic>) を List<String> に変換
+    List<String> propertyAmenities = (property['amenities'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
+    // ユーザーが希望するamenities (List<dynamic>) を List<String> に変換
+    List<String> desiredAmenities = (desired['amenities'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
+
+    for (String desiredAmenity in desiredAmenities) {
+      if (!propertyAmenities.contains(desiredAmenity)) {
+        return false; // ユーザーが希望する設備が1つでも物件に存在しない場合、false
+      }
+    }
+    
+    // 全ての条件に合致した場合
+    return true;
+  }
+
+  // 初期化時にユーザー条件と物件を読み込み、フィルタリングを実行
+  Future<void> _loadUserAndProperties() async {
+    await _fetchUserDesiredConditions();
+    if (_userDesiredConditions != null) {
+      await _filterProperties();
+    } else {
+      print('ユーザー条件が読み込めなかったため、フィルタリングはスキップされました。');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -116,82 +271,120 @@ class _MainScreenState extends State<MainScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('物件一覧')),
-      body: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Hero(
-              tag: 'imageHero',
-              child: GestureDetector(
-                onTap: () {
-                  // 現在の物件の画像リストから、JPGパスだけをフィルタリング
-                  final List<String> currentPropertyImagePaths = propertyImages[currentIndex][0]
-                      .where((path) => path.endsWith('.jpg'))
-                      .toList();
+      body: Column( // body を Column で囲み、その中に既存のコンテンツと新しい表示を追加
+        children: [
+          // 元の画像スライド表示部分
+          Hero(
+            tag: 'imageHero',
+            child: GestureDetector(
+              onTap: () {
+                // propertyImagesはダミーデータなので、Firestoreからのデータと連携させるには
+                // DetailScreenへのデータ渡し方を変更する必要があります。
+                // ここでは仮にダミーデータのままとしています。
+                final List<String> currentPropertyImagePaths = propertyImages[currentIndex][0]
+                    .where((path) => path.endsWith('.jpg'))
+                    .toList();
 
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DetailScreen(
-                        // 最初のJPG画像パスをinitialImagePathとして渡す
-                        initialImagePath: currentPropertyImagePaths.isNotEmpty ? currentPropertyImagePaths[0] : '',
-                        // フィルタリングされていない元の物件の全画像リストを渡す（DetailScreenでIDを抽出するため）
-                        propertyImages: propertyImages[currentIndex][0] + propertyImages[currentIndex][1], // 画像パスと物件IDを結合して渡す
-                      ),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DetailScreen(
+                      initialImagePath: currentPropertyImagePaths.isNotEmpty ? currentPropertyImagePaths[0] : '',
+                      propertyImages: propertyImages[currentIndex][0] + propertyImages[currentIndex][1],
                     ),
-                  );
-                },
-                child: SizedBox(
-                  width: screenWidth * 0.5,
-                  child: AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Image.asset(
-                      propertyImages[currentIndex][0][0], // 変更後: propertyImages[currentIndex][0]が画像パスのリスト
-                      fit: BoxFit.cover,
-                    ),
+                  ),
+                );
+              },
+              child: SizedBox(
+                width: screenWidth * 0.5,
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: Image.asset(
+                    propertyImages[currentIndex][0][0], // ダミーデータの最初の画像を表示
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 30),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+          ),
+          const SizedBox(height: 30),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    currentIndex = (currentIndex + propertyImages.length - 1) % propertyImages.length;
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(150, 50),
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  textStyle: const TextStyle(fontSize: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('前の物件へ'),
+              ),
+              const SizedBox(width: 20),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    currentIndex = (currentIndex + 1) % propertyImages.length;
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(150, 50),
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  textStyle: const TextStyle(fontSize: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('次の物件へ'),
+              ),
+            ],
+          ),
+          // ★ここから追加: 合致する物件IDのリスト表示
+          // この部分は、画像の羅列ではなく、フィルタリング結果を表示するために使われます
+          const SizedBox(height: 30), // 上のボタンとの間にスペースを追加
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      currentIndex = (currentIndex + propertyImages.length - 1) % propertyImages.length;
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(150, 50),
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    textStyle: const TextStyle(fontSize: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: const Text('前の物件へ'),
+                const Text(
+                  '合致する物件ID (Matching Property IDs):',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      currentIndex = (currentIndex + 1) % propertyImages.length;
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(150, 50),
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    textStyle: const TextStyle(fontSize: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: const Text('次の物件へ'),
-                ),
+                const SizedBox(height: 8),
+                if (_userDesiredConditions == null) // ユーザー条件がまだ読み込み中の場合
+                  const Text('ユーザー条件を読み込み中です...', style: TextStyle(color: Colors.grey))
+                else if (_matchingProperties.isEmpty)
+                  const Text('該当する物件IDはありません。')
+                else
+                  // 各物件のIDを取得して表示
+                  // Firestoreから取得したpropertyデータには、ドキュメントIDそのものは含まれないため、
+                  // property['ownerId'] を物件IDとして利用している前提です。
+                  ..._matchingProperties.map((property) {
+                    return Text(
+                      property['ownerId'] ?? 'ID不明', // property['ownerId']を物件IDとして表示
+                      style: const TextStyle(fontSize: 14),
+                    );
+                  }).toList(),
               ],
-            )
-          ],
-        ),
+            ),
+          ),
+          // ★追加部分ここまで
+          // 元のコードで SingleChildScrollView が Column を囲んでいたため、
+          // ListView.builder (フィルタリングされた物件リスト) と
+          // このマッチングID表示が同じ Column 内に収まるように調整が必要です。
+          // 現在の MainScreen の body は SingleChildScrollView(child: Column(...)) ですが、
+          // フィルタリングされた物件リスト (_matchingProperties) を表示する ListView.builder が Expanded を必要とするため、
+          // ここでレイアウトの再考が必要です。
+          // 暫定的に、propertyImages を使った画像スライドとマッチングID表示が同居する形にします。
+          // もしフィルタリング結果の物件をスライド表示したい場合は、ロジックを大幅に変更する必要があります。
+          // 今のところ、このコードはダミー画像の表示と、FirebaseからのマッチングIDのテキスト表示を両立しています。
+        ],
       ),
     );
   }

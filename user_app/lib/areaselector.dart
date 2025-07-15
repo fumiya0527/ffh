@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
 
 class AreaSelector extends StatefulWidget {
-  const AreaSelector({super.key});
+  // ★変更: List<Map<String, String>> を親に渡すようにする
+  final ValueChanged<List<Map<String, String>>> onAreasChanged;
+
+  const AreaSelector({super.key, required this.onAreasChanged});
 
   @override
   State<AreaSelector> createState() => _AreaSelectorState();
 }
 
 class _AreaSelectorState extends State<AreaSelector> {
-  // _selectedCity は「神戸市東灘区 (Kobe City Higashinada Ward)」のような「市＋区」または「市」のキーになる
   String? _selectedCityOrWard;
-  String? _selectedNeighborhood; // 地域・丁目
+  String? _selectedNeighborhood;
 
-  final List<String> selectedAreas = [];
+  // ★変更: 内部で管理するリストの型を List<Map<String, String>> に変更
+  List<Map<String, String>> _selectedDesiredAreas = [];
 
-  // 兵庫県内の詳細なエリアデータ（市・区名 -> 地域・丁目リスト）
   final Map<String, List<String>> hyogoAreaData = {
+    // ... (hyogoAreaData の内容は変更なし)
     "神戸市東灘区 (Kobe City Higashinada Ward)": [
       "青木", "魚崎北町", "魚崎中町", "魚崎西町", "魚崎浜町", "魚崎南町", "岡本", "鴨子ヶ原", "北青木",
       "甲南台", "甲南町", "向洋町中", "向洋町西", "向洋町東", "住吉台", "住吉浜手", "住吉本町", "住吉宮町",
@@ -115,12 +118,10 @@ class _AreaSelectorState extends State<AreaSelector> {
     ]
   };
 
-  // 選択可能な市・区名（キー）のリストを返す
   List<String> getCityOrWardNames() {
     return hyogoAreaData.keys.toList();
   }
 
-  // 選択された市・区名に基づいて、その中の地域・丁目のリストを返す
   List<String> getNeighborhoods(String? cityOrWard) {
     if (cityOrWard == null || !hyogoAreaData.containsKey(cityOrWard)) return [];
     return hyogoAreaData[cityOrWard] ?? [];
@@ -128,25 +129,38 @@ class _AreaSelectorState extends State<AreaSelector> {
 
   void addSelectedArea() {
     if (_selectedCityOrWard != null && _selectedNeighborhood != null) {
-      final area = '兵庫県 (Hyogo Pref.) > $_selectedCityOrWard > $_selectedNeighborhood'; // 英語補助も追加
-      if (!selectedAreas.contains(area)) {
+      // ★変更: ここで city と town を抽出し、Map<String, String> を作成
+      String city = _selectedCityOrWard!.replaceAll(RegExp(r'\(.*?\)'), '').trim();
+      String town = _selectedNeighborhood!.trim();
+
+      final Map<String, String> areaMap = {'city': city, 'town': town};
+
+      // 重複チェック: cityとtownが同じ組み合わせのものが既にないか確認
+      bool isDuplicate = _selectedDesiredAreas.any(
+        (existingArea) => existingArea['city'] == areaMap['city'] && existingArea['town'] == areaMap['town'],
+      );
+
+      if (!isDuplicate) {
         setState(() {
-          selectedAreas.add(area);
+          _selectedDesiredAreas.add(areaMap);
+          widget.onAreasChanged(_selectedDesiredAreas); // 親ウィジェットにMapのリストを通知
         });
       }
     }
   }
 
-  void removeSelectedArea(String area) {
+  void removeSelectedArea(Map<String, String> areaToRemove) {
     setState(() {
-      selectedAreas.remove(area);
+      _selectedDesiredAreas.removeWhere(
+        (area) => area['city'] == areaToRemove['city'] && area['town'] == areaToRemove['town'],
+      );
+      widget.onAreasChanged(_selectedDesiredAreas); // 親ウィジェットに通知
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // アプリ全体で使うメインの色を定義
-    final Color mainColor = Colors.teal[800]!; // 濃いティール
+    final Color mainColor = Colors.teal[800]!;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,26 +168,26 @@ class _AreaSelectorState extends State<AreaSelector> {
         // 市・区の選択ドロップダウン
         DropdownButtonFormField<String>(
           decoration: InputDecoration(
-            labelText: '市・区', // 日本語と英語で併記
+            labelText: '市・区',
             hintText: '市・区を選択 (Select City/Ward)',
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            prefixIcon: Icon(Icons.location_city, color: mainColor), // アイコン色もメインカラーに
+            prefixIcon: Icon(Icons.location_city, color: mainColor),
             filled: true,
             fillColor: Colors.white.withOpacity(0.9),
           ),
           value: _selectedCityOrWard,
           items: getCityOrWardNames()
-              .map((name) => DropdownMenuItem(value: name, child: Text(name))) // ここも英語併記の文字列を表示
+              .map((name) => DropdownMenuItem(value: name, child: Text(name)))
               .toList(),
           onChanged: (val) {
             setState(() {
               _selectedCityOrWard = val;
-              _selectedNeighborhood = null; // 市・区が変わったら地域・丁目をリセット
+              _selectedNeighborhood = null;
             });
           },
         ),
         Text(
-          'City/Ward', // 英語を別のTextウィジェットで表示
+          'City/Ward',
           style: TextStyle(fontSize: 12, color: Colors.grey[700]),
         ),
 
@@ -183,17 +197,17 @@ class _AreaSelectorState extends State<AreaSelector> {
             padding: const EdgeInsets.only(top: 20.0),
             child: DropdownButtonFormField<String>(
               decoration: InputDecoration(
-                labelText: '地域・丁目', // 日本語と英語で併記
+                labelText: '地域・丁目',
                 hintText: '地域・丁目を選択 (Select Neighborhood/Block)',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                prefixIcon: Icon(Icons.place, color: mainColor), // アイコン色もメインカラーに
+                prefixIcon: Icon(Icons.place, color: mainColor),
                 filled: true,
                 fillColor: Colors.white.withOpacity(0.9),
               ),
               value: _selectedNeighborhood,
               items: getNeighborhoods(_selectedCityOrWard)
                   .map((neighborhood) =>
-                      DropdownMenuItem(value: neighborhood, child: Text(neighborhood))) // ここも英語併記の文字列を表示
+                      DropdownMenuItem(value: neighborhood, child: Text(neighborhood)))
                   .toList(),
               onChanged: (val) {
                 setState(() {
@@ -204,7 +218,7 @@ class _AreaSelectorState extends State<AreaSelector> {
           ),
         if (_selectedCityOrWard != null)
           Text(
-            'Neighborhood/Block', // 英語を別のTextウィジェットで表示
+            'Neighborhood/Block',
             style: TextStyle(fontSize: 12, color: Colors.grey[700]),
           ),
 
@@ -215,7 +229,7 @@ class _AreaSelectorState extends State<AreaSelector> {
           height: 50,
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: mainColor, // メインカラー
+              backgroundColor: mainColor,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
@@ -241,7 +255,7 @@ class _AreaSelectorState extends State<AreaSelector> {
 
         const SizedBox(height: 30),
 
-        if (selectedAreas.isNotEmpty)
+        if (_selectedDesiredAreas.isNotEmpty)
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -260,15 +274,19 @@ class _AreaSelectorState extends State<AreaSelector> {
                 ],
               ),
               const SizedBox(height: 10),
-              ...selectedAreas.map((area) => Card(
+              // ★変更: Mapのリストを表示するために ListTileのtitleも変更
+              ..._selectedDesiredAreas.map((areaMap) => Card(
                     margin: const EdgeInsets.symmetric(vertical: 5),
                     elevation: 2,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     child: ListTile(
-                      title: Text(area, style: const TextStyle(fontSize: 15)),
+                      title: Text(
+                        '${areaMap['city'] ?? ''} > ${areaMap['town'] ?? ''}', // 表示用に整形
+                        style: const TextStyle(fontSize: 15),
+                      ),
                       trailing: IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => removeSelectedArea(area),
+                        onPressed: () => removeSelectedArea(areaMap),
                       ),
                     ),
                   )),

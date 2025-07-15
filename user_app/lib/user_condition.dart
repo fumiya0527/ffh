@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:multi_select_flutter/multi_select_flutter.dart';
-import 'manner.dart';
-import 'areaselector.dart';
+import 'package:multi_select_flutter/multi_select_flutter.dart'; // このimportは現在のコードでは直接使用されていませんが、念のため残しておきます
+import 'package:intl/intl.dart'; // 通貨フォーマット用
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // FirebaseAuthを追加
 
+import 'areaselector.dart'; // AreaSelector をインポート (パスは実際のプロジェクトに合わせてください)
+import 'manner.dart'; // MannerScreen をインポート (パスは実際のプロジェクトに合わせてください)
 
 class UserCondition extends StatefulWidget {
+  // 前の画面から受け取るデータ
   final String name;
   final String birthdate;
   final String email;
-  final String password;
   final String nationality;
-  // 追加された個人情報
   final String phoneNumber;
   final String residenceStatus;
   final String residenceCardNumber;
@@ -18,16 +20,14 @@ class UserCondition extends StatefulWidget {
   final String emergencyContactPhoneNumber;
   final String emergencyContactRelationship;
   final String stayDurationInJapan;
-
+  final String userUid; // UserRegistrationScreenから受け取るユーザーのUID
 
   const UserCondition({
     super.key,
     required this.name,
     required this.birthdate,
     required this.email,
-    required this.password,
     required this.nationality,
-    // 追加された個人情報もrequiredにする
     required this.phoneNumber,
     required this.residenceStatus,
     required this.residenceCardNumber,
@@ -35,6 +35,7 @@ class UserCondition extends StatefulWidget {
     required this.emergencyContactPhoneNumber,
     required this.emergencyContactRelationship,
     required this.stayDurationInJapan,
+    required this.userUid, // UIDを必須にする
   });
 
   @override
@@ -44,68 +45,59 @@ class UserCondition extends StatefulWidget {
 class _UserConditionState extends State<UserCondition> {
   final _formKey = GlobalKey<FormState>();
 
-  // 家賃の上限と下限をスライダーで管理
+  // Firebaseのインスタンス
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // 物件の希望条件
   RangeValues _currentRentRange = const RangeValues(30000, 200000);
-
   String? _numberOfResidents; // 居住予定人数
-  String? _moveInDate; // 駅からの距離
+  String? _distanceToStation; // 駅からの距離
+  String? _selectedLayout; // LDK表記用 (単一選択)
 
-  List<String> _selectedLayout = []; // LDK表記用
-  String? _bedrooms; // ベッドルーム数
-  String? _bathrooms; // バスルーム数
+  // ベッドルームとバスルームは削除済み
 
-  // ★変更: _selectedFacilities に全ての設備・特徴を統合して管理
-  List<String> _selectedFacilities = [];
+  List<String> _amenities = []; // 設備・特徴
 
-  // 削除: _hasBalcony, _sunlight, _buildingAge, _selectedSurroundings, _selectedKitchenFacilities は不要
+  // 家具・家電の有無は削除済み
 
-  String? _guarantorSupport; // 保証人/保証会社サポート
-  String? _initialPaymentMethod; // 初期費用の支払い方法
-  String? _contractPeriod; // 契約期間
-  List<String> _selectedFurnitureAppliances = []; // 家具・家電の有無
-  String? _screeningLanguageSupport; // 入居審査の言語サポート
+  // 希望エリア（単一のcityとtownとして保存）
+  String? _desiredCity;
+  String? _desiredTown;
 
-  // ★更新: facilities リストに全ての設備・特徴の選択肢を統合
-  final List<String> facilities = [
-    // 既存の設備
+  // 築年数に関する変数
+  String? _selectedBuildingAge; // 築年数 (単一選択)
+
+  // 契約・入居に関する条件 (UIから削除済みだが、変数自体は存在する場合)
+  String? _guarantorSupport;
+  String? _initialPaymentMethod;
+  String? _contractPeriod;
+  String? _screeningLanguageSupport;
+
+  // 全ての設備・特徴の選択肢を統合
+  final List<String> allAmenities = [
     'バス・トイレ別 (Separate Bath/Toilet)',
-    'エアコン (Air Conditioner)',
+    'エアコン付き', // ★修正点: "エアコン (Air Conditioner)" から変更
     'オートロック (Auto-lock)',
     'ペット可 (Pet-friendly)',
-    'Wi-Fiあり (Wi-Fi available)',
+    'インターネット無料', // ★修正点: "Wi-Fiあり (Wi-Fi available)" から変更
     '駐車場あり (Parking available)',
     '畳なし (No Tatami rooms)',
-    // 周辺環境 (旧 surroundingsOptions)
-    //ここ消しましたby橋本颯太
-    // 'スーパーが近い (Supermarket nearby)',
-    // 'コンビニが近い (Convenience store nearby)',
-    // '病院が近い (Hospital nearby)',
-    // '公園が近い (Park nearby)',
-    // '学校が近い (School nearby)',
-
-
-    // キッチン設備 (旧 kitchenFacilitiesOptions)
-    //'ガスコンロ (Gas Stove)',これも消した
     'IHコンロ (IH Cooktop)',
-    //'システムキッチン (System Kitchen)',ここま消した
-    // '食洗機 (Dishwasher)',
-    // '広いキッチン (Spacious Kitchen)',
-    // バルコニーの有無 (旧 yesNoOptionsの一部)
     'バルコニーあり (Balcony available)',
     'バルコニーなし (No Balcony)',
-    // 日当たり (旧 sunlightOptions)
-    // '日当たりが良い (Good sunlight)',
-    // '日当たり普通 (Normal sunlight)',
-    // '日当たり悪い (Bad sunlight)',
-    // 築年数 (旧 buildingAgeOptions)
-    '築年数：新築 (New construction)',
-    '築年数：5年以内 (Building age: Within 5 years)',
-    '築年数：10年以内 (Building age: Within 10 years)',
-    '築年数：20年以内 (Building age: Within 20 years)',
-    '築年数：20年以上 (Building age: More than 20 years)',
   ];
 
-  final List<String> layouts = ['1R', '1K', '1DK','1LDK','2k', '2DK', '2LDK', '3LDK以上'];
+  // 築年数の選択肢
+  final List<String> _buildingAgeOptions = [
+    '5年以内 (Within 5 years)',
+    '10年以内 (Within 10 years)',
+    '20年以内 (Within 20 years)',
+    '20年以上 (More than 20 years)',
+  ];
+
+  final List<String> layouts = ['1R', '1K', '1DK', '1LDK', '2K', '2DK', '2LDK', '3LDK以上'];
+  
   final List<String> moveInOptions = [
     '1分以内 (Within 1 min)', '5分以内 (Within 5 min)', '10分以内 (Within 10 min)',
     '15分以内 (Within 15 min)', '20分以上 (More than 20 min)'
@@ -123,14 +115,73 @@ class _UserConditionState extends State<UserCondition> {
   final List<String> contractPeriodOptions = [
     '1年未満 (Less than 1 year)', '1年 (1 year)', '2年 (2 years)', '2年以上 (More than 2 years)'
   ];
-  final List<String> furnitureApplianceOptions = [
-    '家具付き (Furnished)', '家電付き (Appliances included)', '家具・家電なし (Unfurnished/No appliances)'
-  ];
+  
   final List<String> screeningLanguageOptions = [
     '日本語のみ (Japanese only)', '英語対応 (English support)', 'その他言語対応 (Other languages support)'
   ];
 
-  // 削除: surroundingsOptions, kitchenFacilitiesOptions, yesNoOptions, sunlightOptions, buildingAgeOptions
+  // 英語表記を取り除くヘルパー関数
+  String _extractJapanese(String text) {
+    RegExp regex = RegExp(r'^(.*?)\s*\(.*?\)$'); // "日本語 (English)" のパターン
+    Match? match = regex.firstMatch(text);
+    if (match != null && match.groupCount >= 1) {
+      return match.group(1)!.trim(); // 括弧の前の日本語部分を抽出
+    }
+    return text.trim(); // パターンに合わない場合はそのまま返す
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  // --- Firestoreにデータを保存する関数 ---
+  Future<void> _saveUserConditions() async {
+    // フォーム全体のバリデーション
+    if (_formKey.currentState!.validate()) {
+      // ドロップダウンやチップ選択の必須チェック
+      if (_numberOfResidents == null ||
+          _distanceToStation == null ||
+          _selectedBuildingAge == null ||
+          _selectedLayout == null ||
+          _amenities.isEmpty ||
+          _desiredCity == null ||
+          _desiredTown == null) {
+        _showMessage('全ての必須項目を入力・選択してください (Please fill in/select all required fields).');
+        return;
+      }
+
+      try {
+        String uid = widget.userUid;
+
+        // 保存時に日本語部分のみを抽出して格納
+        Map<String, dynamic> conditionsData = {
+          'desiredConditions': {
+            'rentRangeMin': _currentRentRange.start.round(),
+            'rentRangeMax': _currentRentRange.end.round(),
+            'numberOfResidents': _extractJapanese(_numberOfResidents!), // 日本語抽出
+            'distanceToStation': _extractJapanese(_distanceToStation!), // 日本語抽出
+            'buildingAge': _extractJapanese(_selectedBuildingAge!), // 日本語抽出
+            'selectedLayout': _selectedLayout!, // これは日本語のみなのでそのまま
+            'amenities': _amenities.map((e) => _extractJapanese(e)).toList(), // 各要素から日本語抽出
+            'city': _desiredCity!, // AreaSelectorで既に日本語のみになっているはず
+            'town': _desiredTown!, // AreaSelectorで既に日本語のみになっているはず
+          },
+          'updatedAt': FieldValue.serverTimestamp(),
+        };
+
+        await _firestore.collection('user_ID').doc(uid).update(conditionsData);
+
+        _showMessage('希望条件が保存されました！ (Desired conditions saved successfully!)');
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const MannerScreen()));
+      } catch (e) {
+        _showMessage('条件の保存に失敗しました: ${e.toString()} (Failed to save conditions: ${e.toString()})');
+      }
+    } else {
+      _showMessage('入力にエラーがあります。全ての項目を正しく入力してください。 (There are errors in the input. Please fill in all fields correctly.)');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -179,8 +230,8 @@ class _UserConditionState extends State<UserCondition> {
                   max: 200000,
                   divisions: 20,
                   labels: RangeLabels(
-                    _currentRentRange.start.round().toString(),
-                    _currentRentRange.end.round().toString(),
+                    NumberFormat('#,###').format(_currentRentRange.start.round()),
+                    NumberFormat('#,###').format(_currentRentRange.end.round()),
                   ),
                   onChanged: (RangeValues values) {
                     setState(() {
@@ -192,16 +243,45 @@ class _UserConditionState extends State<UserCondition> {
                 ),
                 Center(
                   child: Text(
-                    '${_currentRentRange.start.round()}円 ～ ${_currentRentRange.end.round()}円',
+                    '${NumberFormat('#,###').format(_currentRentRange.start.round())}円 ～ ${NumberFormat('#,###').format(_currentRentRange.end.round())}円',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: mainColor),
                   ),
                 ),
                 const SizedBox(height: 20),
 
                 // 希望エリア
-                _buildSubSectionTitle('Desired Areas (multiple allowed)', '希望エリア（いくつでもOK）'),
+                _buildSubSectionTitle('Desired Area', '希望エリア（単一）'),
                 const SizedBox(height: 15),
-                const AreaSelector(),
+                AreaSelector(
+                  onAreasChanged: (areas) {
+                    setState(() {
+                      if (areas.isNotEmpty) {
+                        _desiredCity = areas.first['city'];
+                        _desiredTown = areas.first['town'];
+                      } else {
+                        _desiredCity = null;
+                        _desiredTown = null;
+                      }
+                    });
+                  },
+                ),
+                const SizedBox(height: 10),
+                if (_desiredCity != null && _desiredTown != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 20.0),
+                    child: Text(
+                      '選択中の希望エリア: ${_desiredCity} > ${_desiredTown}',
+                      style: TextStyle(fontSize: 16, color: mainColor, fontWeight: FontWeight.bold),
+                    ),
+                  )
+                else
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 20.0),
+                    child: Text(
+                      '希望エリアを選択してください',
+                      style: TextStyle(color: Colors.red, fontSize: 14),
+                    ),
+                  ),
                 const SizedBox(height: 20),
 
                 // 居住予定人数
@@ -221,11 +301,24 @@ class _UserConditionState extends State<UserCondition> {
                 _buildSubSectionTitle('Distance from station', '駅からの距離'),
                 const SizedBox(height: 8),
                 _buildDropdownFormField(
-                  value: _moveInDate,
+                  value: _distanceToStation,
                   items: moveInOptions,
-                  onChanged: (val) => setState(() => _moveInDate = val!),
+                  onChanged: (val) => setState(() => _distanceToStation = val!),
                   labelText: '選んでください',
                   icon: Icons.train,
+                  mainColor: mainColor,
+                ),
+                const SizedBox(height: 20),
+
+                // 築年数のドロップダウンメニュー
+                _buildSubSectionTitle('Building Age', '築年数'),
+                const SizedBox(height: 8),
+                _buildDropdownFormField(
+                  value: _selectedBuildingAge,
+                  items: _buildingAgeOptions,
+                  onChanged: (val) => setState(() => _selectedBuildingAge = val!),
+                  labelText: '選んでください',
+                  icon: Icons.business, // 建物に関連するアイコン
                   mainColor: mainColor,
                 ),
                 const SizedBox(height: 20),
@@ -236,186 +329,88 @@ class _UserConditionState extends State<UserCondition> {
                 const SizedBox(height: 15),
 
                 // 間取り (LDK表記)
-                _buildSubSectionTitle('Select desired layouts (multiple allowed)', '間取りを選んでください（いくつでもOK）'),
+                _buildSubSectionTitle('Select desired layout (single allowed)', '間取りを選んでください（単一選択）'),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: layouts.map((layout) {
+                    final isSelected = (_selectedLayout == layout); // 単一選択のチェック
                     return FilterChip(
                       label: Text(layout),
-                      selected: _selectedLayout.contains(layout),
+                      selected: isSelected,
                       onSelected: (selected) {
                         setState(() {
-                          selected
-                              ? _selectedLayout.add(layout)
-                              : _selectedLayout.remove(layout);
+                          _selectedLayout = selected ? layout : null; // 選択されたら設定、解除されたらnull
                         });
                       },
                       selectedColor: secondaryColor.withOpacity(0.2),
                       checkmarkColor: mainColor,
-                      labelStyle: TextStyle(color: _selectedLayout.contains(layout) ? mainColor : Colors.black87),
+                      labelStyle: TextStyle(color: isSelected ? mainColor : Colors.black87),
                     );
                   }).toList(),
                 ),
+                if (_selectedLayout == null)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      '間取りを1つ選択してください',
+                      style: TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
                 const SizedBox(height: 20),
 
-                // ベッドルームとバスルームの数 (LDK表記では伝わりにくい外国人向け)
-                _buildSubSectionTitle('Alternatively, specify number of rooms', 'または、部屋数を指定'),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: 'ベッドルーム数 (Bedrooms)',
-                          hintText: '例: 2',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          filled: true,
-                          fillColor: Colors.white.withOpacity(0.9),
-                        ),
-                        onChanged: (val) => _bedrooms = val,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextFormField(
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: 'バスルーム数 (Bathrooms)',
-                          hintText: '例: 1',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          filled: true,
-                          fillColor: Colors.white.withOpacity(0.9),
-                        ),
-                        onChanged: (val) => _bathrooms = val,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
+                // ベッドルームとバスルームは削除済み
 
-
-                // --- 3. 物件の設備・特徴（旧「詳細な物件特性」もここに統合） ---
+                // --- 3. 物件の設備・特徴 ---
                 const SizedBox(height: 30),
                 _buildSectionTitle('Facilities & Features', '設備・特徴', mainColor, secondaryColor),
                 const SizedBox(height: 15),
 
-                // 設備（Wi-Fi, 駐車場, 畳の有無を含む）と、周辺環境、キッチン設備、バルコニー、日当たり、築年数
+                // 設備（複数選択）
                 _buildSubSectionTitle('Select desired facilities and characteristics (multiple allowed)', '希望の設備と特徴を選んでください（複数選択可）'),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: facilities.map((item) { // facilities リストがすべての選択肢を含む
+                  children: allAmenities.map((item) {
+                    final isSelected = _amenities.contains(item);
                     return FilterChip(
                       label: Text(item),
-                      selected: _selectedFacilities.contains(item),
+                      selected: isSelected,
                       onSelected: (selected) {
                         setState(() {
-                          selected
-                              ? _selectedFacilities.add(item)
-                              : _selectedFacilities.remove(item);
+                          if (selected) {
+                            _amenities.add(item);
+                          } else {
+                            _amenities.remove(item);
+                          }
                         });
                       },
                       selectedColor: secondaryColor.withOpacity(0.2),
                       checkmarkColor: mainColor,
-                      labelStyle: TextStyle(color: _selectedFacilities.contains(item) ? mainColor : Colors.black87),
+                      labelStyle: TextStyle(color: _amenities.contains(item) ? mainColor : Colors.black87),
                     );
                   }).toList(),
                 ),
+                if (_amenities.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      '希望設備を1つ以上選択してください',
+                      style: TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
                 Text(
                   'Please select (multiple allowed)',
                   style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
                 const SizedBox(height: 20),
 
-                // 家具・家電の有無
-                _buildSubSectionTitle('Furniture / Appliances', '家具・家電の有無'),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: furnitureApplianceOptions.map((item) {
-                    return FilterChip(
-                      label: Text(item),
-                      selected: _selectedFurnitureAppliances.contains(item),
-                      onSelected: (selected) {
-                        setState(() {
-                          selected
-                              ? _selectedFurnitureAppliances.add(item)
-                              : _selectedFurnitureAppliances.remove(item);
-                        });
-                      },
-                      selectedColor: secondaryColor.withOpacity(0.2),
-                      checkmarkColor: mainColor,
-                      labelStyle: TextStyle(color: _selectedFurnitureAppliances.contains(item) ? mainColor : Colors.black87),
-                    );
-                  }).toList(),
-                ),
-                Text(
-                  'Please select',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                ),
-                const SizedBox(height: 20),
-
-                // // --- 4. 契約・入居に関する条件 ---
-                // const SizedBox(height: 30),
-                // _buildSectionTitle('Contract & Move-in Conditions', '契約・入居に関する条件', mainColor, secondaryColor),
-                // const SizedBox(height: 15),
-
-                // // 保証人 / 保証会社サポート
-                // _buildSubSectionTitle('Guarantor / Guarantor Company Support', '保証人 / 保証会社サポート'),
-                // const SizedBox(height: 8),
-                // _buildDropdownFormField(
-                //   value: _guarantorSupport,
-                //   items: guarantorOptions,
-                //   onChanged: (val) => setState(() => _guarantorSupport = val!),
-                //   labelText: '選んでください',
-                //   icon: Icons.security,
-                //   mainColor: mainColor,
-                // ),
-                // const SizedBox(height: 20),
-
-                // // 初期費用の支払い方法
-                // _buildSubSectionTitle('Initial Payment Method', '初期費用の支払い方法'),
-                // const SizedBox(height: 8),
-                // _buildDropdownFormField(
-                //   value: _initialPaymentMethod,
-                //   items: paymentMethodOptions,
-                //   onChanged: (val) => setState(() => _initialPaymentMethod = val!),
-                //   labelText: '選んでください',
-                //   icon: Icons.payment,
-                //   mainColor: mainColor,
-                // ),
-                // const SizedBox(height: 20),
-
-                // // 契約期間
-                // _buildSubSectionTitle('Contract Period', '契約期間'),
-                // const SizedBox(height: 8),
-                // _buildDropdownFormField(
-                //   value: _contractPeriod,
-                //   items: contractPeriodOptions,
-                //   onChanged: (val) => setState(() => _contractPeriod = val!),
-                //   labelText: '選んでください',
-                //   icon: Icons.calendar_today,
-                //   mainColor: mainColor,
-                // ),
-                // const SizedBox(height: 20),
-
-                // // 入居審査の言語サポート
-                // _buildSubSectionTitle('Screening Language Support', '入居審査の言語サポート'),
-                // const SizedBox(height: 8),
-                // _buildDropdownFormField(
-                //   value: _screeningLanguageSupport,
-                //   items: screeningLanguageOptions,
-                //   onChanged: (val) => setState(() => _screeningLanguageSupport = val!),
-                //   labelText: '選んでください',
-                //   icon: Icons.translate,
-                //   mainColor: mainColor,
-                // ),
-                // const SizedBox(height: 40),
+                // 家具・家電の有無は削除済み
+                
+                // 契約・入居に関する条件のセクションはコメントアウト（または削除）されたため、以下は再掲しません。
+                const SizedBox(height: 40),
 
                 // 登録ボタン
                 SizedBox(
@@ -430,16 +425,7 @@ class _UserConditionState extends State<UserCondition> {
                       ),
                       elevation: 5,
                     ),
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('登録が完了しました！ (Registration complete!)')),
-                        );
-                        // 実際にはここで入力された条件を次の画面に渡すか、APIに送信する
-                        // 例: print('Rent Range: ${_currentRentRange.start}-${_currentRentRange.end}');
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => MannerScreen()));
-                      }
-                    },
+                    onPressed: _saveUserConditions,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -456,6 +442,7 @@ class _UserConditionState extends State<UserCondition> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
@@ -464,7 +451,7 @@ class _UserConditionState extends State<UserCondition> {
     );
   }
 
-  // ヘルパーメソッドは変更なし
+  // ヘルパーメソッド（共通のUI部品を生成）
   Widget _buildSectionTitle(String englishTitle, String japaneseTitle, Color mainColor, Color secondaryColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -512,16 +499,14 @@ class _UserConditionState extends State<UserCondition> {
   }) {
     return DropdownButtonFormField<String>(
       decoration: InputDecoration(
-        hintText: labelText, // '選んでください' の代わりに labelText を使う
+        hintText: labelText,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         prefixIcon: Icon(icon, color: mainColor),
         filled: true,
         fillColor: Colors.white.withOpacity(0.9),
       ),
       value: value,
-      items: items
-          .map((option) => DropdownMenuItem(value: option, child: Text(option)))
-          .toList(),
+      items: items.map((option) => DropdownMenuItem(value: option, child: Text(option))).toList(),
       onChanged: onChanged,
     );
   }
