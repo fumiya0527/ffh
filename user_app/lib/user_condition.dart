@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart'; // このimportは現在のコードでは直接使用されていませんが、念のため残しておきます
 import 'package:intl/intl.dart'; // 通貨フォーマット用

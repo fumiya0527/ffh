@@ -118,7 +118,7 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
     '川西市': ['大和東', '清和台東', '鼓が滝', '多田院', '東多田', '南花屋敷', '錦松台', '緑台', '向陽台',
     '絹延橋', '久代', '火打', 'けやき坂'],
     '芦屋市': ['大原町', '甲南町', '精道町', '呉川町', '月若町', '西山町', '六麓荘町', '船戸町', '打出小槌町', '宮塚町',
-    '高浜町', '浜風町', '潮見町', '涼風町'],
+    '高浜町', '浜風町', '潮見町', '凉風町'],
     '明石市': ['魚住町西岡', '大久保町ゆりのき通', '藤江', '林崎町', '松江', '和坂', '相生町', '旭が丘', '太寺',
     '大蔵海岸通', '金ケ崎', '貴崎', '小久保', '西明石', '東野町', '本町', '山下町'],
     '加古川市': ['尾上町口里', '加古川町寺家町', '神野町', '野口町野口', '平岡町新在家', '八幡町中西条', '東神吉町', '志方町',
@@ -175,7 +175,7 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
 
     if (_formKey.currentState!.validate() &&
         _selectedCityOrWard != null && 
-        _selectedTown != null &&      
+        _selectedTown != null &&       
         _streetAddressController.text.isNotEmpty && 
         _selectedBuildingAge != null &&
         _selectedFloorPlan != null &&
@@ -210,6 +210,12 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
       try {
         DocumentReference docRef = await FirebaseFirestore.instance.collection('properties').add(propertyData);
         String propertyId = docRef.id;
+
+        // userHope マップと空の配列を追加
+        await FirebaseFirestore.instance.collection('properties').doc(propertyId).update({
+          'userHope': [], // userHope マップ内に空の配列を保存
+          'user_license': [], // user_license マップ内に空の配列を保存
+        });
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('物件情報を登録しました！')),

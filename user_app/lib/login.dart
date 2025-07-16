@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // ★追加: Firebase Authenticationのインポート
 import 'package:ffh/user_regist.dart';
