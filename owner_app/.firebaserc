@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "ffh-firebase"
+  },
+  "targets": {
+    "ffh-firebase": {
+      "hosting": {
+        "owner-site": [
+          "ffh-userapp"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

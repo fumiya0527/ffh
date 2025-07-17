@@ -2,7 +2,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 Future<String?> uploadImage(XFile imageFile) async {
-  final String ipAddress = '192.0.0.2'; 
+  final String ipAddress = '192.168.11.8'; 
   final String port = '5000';
 
   var uri = Uri.parse('http://$ipAddress:$port/upload');
