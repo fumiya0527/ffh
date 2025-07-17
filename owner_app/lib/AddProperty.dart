@@ -9,6 +9,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'firebase_options.dart';
 import 'OwnerHomeScreen.dart'; 
+import 'package:image_picker/image_picker.dart';
+import 'image.dart';
 
 //オーナー物件追加クラス
 class AddPropertyScreen extends StatelessWidget {
@@ -48,6 +50,8 @@ class PropertyRegistrationScreen extends StatefulWidget {
 class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _autovalidateForm = false;
+
+  XFile? _image;
 
   final TextEditingController _propertyNameController = TextEditingController();
   final TextEditingController _rentController = TextEditingController();
@@ -189,6 +193,15 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
         return;
       }
 
+      String? imageUrl;
+      if (_image != null) {
+        imageUrl = await uploadImage(_image!);
+        if (imageUrl == null) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('画像アップロード失敗')),);
+          return;
+        }
+      }
+
       final String fullAddress = '$_selectedCityOrWard$_selectedTown${_streetAddressController.text}';
 
       final Map<String, dynamic> propertyData = {
@@ -204,10 +217,14 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
         'distanceToStation': _selectedDistanceToStation!,
         'amenities': _amenities.where((item) => item['checked']).map((item) => item['title']).toList(),
         'timestamp': FieldValue.serverTimestamp(),
+        if (imageUrl != null) 'imageUrl': imageUrl,
         
       };
 
       try {
+        await FirebaseFirestore.instance.collection('properties').add(propertyData);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('物件情報登録完了')),);
+
         DocumentReference docRef = await FirebaseFirestore.instance.collection('properties').add(propertyData);
         String propertyId = docRef.id;
 
@@ -358,6 +375,30 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 16.0),
+
+               const Text('物件画像', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8.0),
+              Container(
+                width: double.infinity,
+                height: 200,
+                decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(8),),
+                child: _image == null
+                    ? const Center(child: Text('画像が選択されていません'))
+                    : Image.network(_image!.path, fit: BoxFit.cover), 
+              ),
+              const SizedBox(height: 8.0),
+              Center(
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final picker = ImagePicker();
+                    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+                    setState(() { _image = pickedFile; });
+                  },
+                  icon: const Icon(Icons.photo_library),
+                  label: const Text('ギャラリーから画像を選択'),
+                ),
               ),
               const SizedBox(height: 16.0),
 

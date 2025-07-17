@@ -93,18 +93,20 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   }
 }
 
-// class OwnerPersonalInfoScreen extends StatelessWidget {
-//   final String ownerId;
-//   const OwnerPersonalInfoScreen({super.key, required this.ownerId});
+/*
+class OwnerPersonalInfoScreen extends StatelessWidget {
+  final String ownerId;
+  const OwnerPersonalInfoScreen({super.key, required this.ownerId});
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Center(
-//       child: Text(
-//         '個人情報設定画面\n(ログイン中のオーナーID: ${ownerId})\nここにユーザー名、連絡先などの設定UIを実装',
-//         textAlign: TextAlign.center,
-//         style: const TextStyle(fontSize: 18, color: Colors.black54),
-//       ),
-//     );
-//   }
-// }
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        '個人情報設定画面\n(ログイン中のオーナーID: ${ownerId})\nここにユーザー名、連絡先などの設定UIを実装',
+        textAlign: TextAlign.center,
+        style: const TextStyle(fontSize: 18, color: Colors.black54),
+      ),
+    );
+  }
+}
+*/
