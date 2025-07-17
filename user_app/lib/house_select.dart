@@ -7,6 +7,7 @@ import 'firebase_options.dart';
 import 'package:ffh/house_select.dart'; // ffh/house_select.dart のパスを正確に
 import 'package:firebase_auth/firebase_auth.dart';
 
+
 // void main() async {
 //   WidgetsFlutterBinding.ensureInitialized();
 
@@ -111,9 +112,9 @@ class _MainScreenState extends State<MainScreen> {
 
   // ダミーの物件画像データ (Firebaseから取得したデータで表示する場合は、このリストは不要になります)
   final List<List<List<String>>> propertyImages = [
-    [['assets/home1.jpg', 'assets/home1_1.jpg', 'assets/home1_2.jpg'] ,['manRSK0lpWSBp24da51bKzQw2li2']], // 'manRSK0lpWSBp24da51bKzQw2li2' が物件ID
-    [['assets/home2.jpg', 'assets/home2_1.jpg'],[ 'guLSsrP22ETfWOHEuCU3OuKzv6P2']], // 'guLSsrP22ETfWOHEuCU3OuKzv6P2' が物件ID
-    [['assets/home3.jpg', 'assets/home3_1.jpg'],[ 'guLSsrP22ETfWOHEuCU3OuKzv6P2']], // 'guLSsrP22ETfWOHEuCU3OuKzv6P2' が物件ID
+    [['assets/home1.jpg', 'assets/home1_1.jpg', 'assets/home1_2.jpg'] ,['9cp0aiaiEs0yTSQ40DWM']], // 'manRSK0lpWSBp24da51bKzQw2li2' が物件ID
+    [['assets/home2.jpg', 'assets/home2_1.jpg'],[ 'UYhCХEd5qR0tCsG3o2РС']], // 'guLSsrP22ETfWOHEuCU3OuKzv6P2' が物件ID
+    [['assets/home3.jpg', 'assets/home3_1.jpg'],[ 'twWytYCGkUhpHnfpvZQf']], // 'guLSsrP22ETfWOHEuCU3OuKzv6P2' が物件ID
   ];
   int currentIndex = 0; // 現在表示している物件のインデックス (ダミーデータ用)
 
@@ -240,9 +241,7 @@ class _MainScreenState extends State<MainScreen> {
     }
 
     // 6. 設備・特徴 (amenities) の比較
-    // 物件が持つamenities (List<dynamic>) を List<String> に変換
     List<String> propertyAmenities = (property['amenities'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
-    // ユーザーが希望するamenities (List<dynamic>) を List<String> に変換
     List<String> desiredAmenities = (desired['amenities'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
 
     for (String desiredAmenity in desiredAmenities) {
@@ -251,7 +250,6 @@ class _MainScreenState extends State<MainScreen> {
       }
     }
     
-    // 全ての条件に合致した場合
     return true;
   }
 
@@ -344,9 +342,8 @@ class _MainScreenState extends State<MainScreen> {
               ),
             ],
           ),
-          // ★ここから追加: 合致する物件IDのリスト表示
-          // この部分は、画像の羅列ではなく、フィルタリング結果を表示するために使われます
-          const SizedBox(height: 30), // 上のボタンとの間にスペースを追加
+          // 合致する物件IDのリスト表示
+          const SizedBox(height: 30),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -357,33 +354,20 @@ class _MainScreenState extends State<MainScreen> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                if (_userDesiredConditions == null) // ユーザー条件がまだ読み込み中の場合
+                if (_userDesiredConditions == null)
                   const Text('ユーザー条件を読み込み中です...', style: TextStyle(color: Colors.grey))
                 else if (_matchingProperties.isEmpty)
                   const Text('該当する物件IDはありません。')
                 else
-                  // 各物件のIDを取得して表示
-                  // Firestoreから取得したpropertyデータには、ドキュメントIDそのものは含まれないため、
-                  // property['ownerId'] を物件IDとして利用している前提です。
                   ..._matchingProperties.map((property) {
                     return Text(
-                      property['ownerId'] ?? 'ID不明', // property['ownerId']を物件IDとして表示
+                      property['ownerId'] ?? 'ID不明',
                       style: const TextStyle(fontSize: 14),
                     );
                   }).toList(),
               ],
             ),
           ),
-          // ★追加部分ここまで
-          // 元のコードで SingleChildScrollView が Column を囲んでいたため、
-          // ListView.builder (フィルタリングされた物件リスト) と
-          // このマッチングID表示が同じ Column 内に収まるように調整が必要です。
-          // 現在の MainScreen の body は SingleChildScrollView(child: Column(...)) ですが、
-          // フィルタリングされた物件リスト (_matchingProperties) を表示する ListView.builder が Expanded を必要とするため、
-          // ここでレイアウトの再考が必要です。
-          // 暫定的に、propertyImages を使った画像スライドとマッチングID表示が同居する形にします。
-          // もしフィルタリング結果の物件をスライド表示したい場合は、ロジックを大幅に変更する必要があります。
-          // 今のところ、このコードはダミー画像の表示と、FirebaseからのマッチングIDのテキスト表示を両立しています。
         ],
       ),
     );
@@ -450,27 +434,35 @@ class _DetailScreenState extends State<DetailScreen> {
     });
   }
 
+  // ★変更点: Firebaseへの「興味あり」処理をここに直接記述
   Future<void> _sendInterestToFirebase(BuildContext context) async {
-    const String dummyUserId = 'user_abc_123';
-    final String propertyIdToSend = _propertyId; // initStateで抽出した物件IDを使用
+    final FirebaseAuth _auth = FirebaseAuth.instance;
+    final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+    User? currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      // ログインしていない場合、処理せず、ログを出すのみ
+      print('エラー: ユーザーがログインしていません。');
+      return;
+    }
+
+    final String userId = currentUser.uid;
 
     try {
-      await FirebaseFirestore.instance.collection('userInterests').add({
-        'userId': dummyUserId,
-        'propertyId': propertyIdToSend,
-        'timestamp': FieldValue.serverTimestamp(),
-        'status': 'pending',
-      });
+      DocumentReference propertyDocRef = _firestore.collection('properties').doc(_propertyId);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('物件への意思表示を送信しました！')),
-      );
-      Navigator.of(context).pop();
+      // FieldValue.arrayUnion を使って、userHope配列にユーザーIDを追加
+      // 既に存在する場合は追加されず、存在しない場合のみ追加される
+      await propertyDocRef.update({
+        'userHope': FieldValue.arrayUnion([userId]),
+      });
+      print('DEBUG: 物件ID $_propertyId の userHope にユーザーID $userId を追加しました。');
+
     } catch (e) {
-      print('Firebaseへのデータ送信に失敗しました: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('意思表示の送信に失敗しました: ${e.toString()}')),
-      );
+      print('エラー: Firebaseへのデータ更新に失敗しました: $e');
+    } finally {
+      // 処理が完了したら、前の画面に戻る
+      Navigator.pop(context); 
     }
   }
 
@@ -563,9 +555,7 @@ class _DetailScreenState extends State<DetailScreen> {
               ),
               const SizedBox(height: 30),
               ElevatedButton(
-                onPressed: () {
-                  _sendInterestToFirebase(context);
-                },
+                onPressed: () => _sendInterestToFirebase(context), // ボタンで関数を呼び出す
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 18),
                   backgroundColor: Colors.green,

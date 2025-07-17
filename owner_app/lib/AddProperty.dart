@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -10,7 +9,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'firebase_options.dart';
 import 'OwnerHomeScreen.dart'; 
-import 'image.dart';
 
 //オーナー物件追加クラス
 class AddPropertyScreen extends StatelessWidget {
@@ -51,8 +49,6 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
   final _formKey = GlobalKey<FormState>();
   bool _autovalidateForm = false;
 
-  XFile? _image;
-
   final TextEditingController _propertyNameController = TextEditingController();
   final TextEditingController _rentController = TextEditingController();
   final TextEditingController _streetAddressController = TextEditingController();
@@ -66,6 +62,7 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
 
   String? _selectedTown;
   List<String> _townsForSelectedCity = []; 
+  
 
   final Map<String, List<String>> _townsByCity = {
     '神戸市東灘区': ['青木', '魚崎北町', '魚崎中町', '魚崎西町', '魚崎浜町', '魚崎南町', '岡本', '鴨子ヶ原', '北青木',
@@ -121,7 +118,7 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
     '川西市': ['大和東', '清和台東', '鼓が滝', '多田院', '東多田', '南花屋敷', '錦松台', '緑台', '向陽台',
     '絹延橋', '久代', '火打', 'けやき坂'],
     '芦屋市': ['大原町', '甲南町', '精道町', '呉川町', '月若町', '西山町', '六麓荘町', '船戸町', '打出小槌町', '宮塚町',
-    '高浜町', '浜風町', '潮見町', '涼風町'],
+    '高浜町', '浜風町', '潮見町', '凉風町'],
     '明石市': ['魚住町西岡', '大久保町ゆりのき通', '藤江', '林崎町', '松江', '和坂', '相生町', '旭が丘', '太寺',
     '大蔵海岸通', '金ケ崎', '貴崎', '小久保', '西明石', '東野町', '本町', '山下町'],
     '加古川市': ['尾上町口里', '加古川町寺家町', '神野町', '野口町野口', '平岡町新在家', '八幡町中西条', '東神吉町', '志方町',
@@ -178,7 +175,7 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
 
     if (_formKey.currentState!.validate() &&
         _selectedCityOrWard != null && 
-        _selectedTown != null &&      
+        _selectedTown != null &&       
         _streetAddressController.text.isNotEmpty && 
         _selectedBuildingAge != null &&
         _selectedFloorPlan != null &&
@@ -190,15 +187,6 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
           const SnackBar(content: Text('物件を登録するにはログインが必要です。')),
         );
         return;
-      }
-
-      String? imageUrl;
-      if (_image != null) {
-        imageUrl = await uploadImage(_image!);
-        if (imageUrl == null) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('画像アップロード失敗')),);
-          return;
-        }
       }
 
       final String fullAddress = '$_selectedCityOrWard$_selectedTown${_streetAddressController.text}';
@@ -216,17 +204,28 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
         'distanceToStation': _selectedDistanceToStation!,
         'amenities': _amenities.where((item) => item['checked']).map((item) => item['title']).toList(),
         'timestamp': FieldValue.serverTimestamp(),
-        if (imageUrl != null) 'imageUrl': imageUrl,
+        
       };
 
       try {
-        await FirebaseFirestore.instance.collection('properties').add(propertyData);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('物件情報登録完了')),);
+        DocumentReference docRef = await FirebaseFirestore.instance.collection('properties').add(propertyData);
+        String propertyId = docRef.id;
+
+        // userHope マップと空の配列を追加
+        await FirebaseFirestore.instance.collection('properties').doc(propertyId).update({
+          'userHope': [], // userHope マップ内に空の配列を保存
+          'user_license': [], // user_license マップ内に空の配列を保存
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('物件情報を登録しました！')),
+        );
+
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => OwnerHomeScreen(currentOwnerId: user.uid)),
-          (Route<dynamic> Route) => false,
-          );
+          (Route<dynamic> route) => false,
+        );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('物件情報の登録に失敗しました: ${e.toString()}')),
@@ -338,30 +337,6 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
                   }
                   return null;
                 },
-              ),
-              const SizedBox(height: 16.0),
-
-               const Text('物件画像', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8.0),
-              Container(
-                width: double.infinity,
-                height: 200,
-                decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(8),),
-                child: _image == null
-                    ? const Center(child: Text('画像が選択されていません'))
-                    : Image.network(_image!.path, fit: BoxFit.cover), 
-              ),
-              const SizedBox(height: 8.0),
-              Center(
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    final picker = ImagePicker();
-                    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-                    setState(() { _image = pickedFile; });
-                  },
-                  icon: const Icon(Icons.photo_library),
-                  label: const Text('ギャラリーから画像を選択'),
-                ),
               ),
               const SizedBox(height: 16.0),
 
