@@ -222,17 +222,15 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
       };
 
       try {
-        await FirebaseFirestore.instance.collection('properties').add(propertyData);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('物件情報登録完了')),);
+        // ▼▼▼ ここから修正 ▼▼▼
+      // 1. addは一度だけ実行し、その参照を受け取る
+      DocumentReference docRef = await FirebaseFirestore.instance.collection('properties').add(propertyData);
 
-        DocumentReference docRef = await FirebaseFirestore.instance.collection('properties').add(propertyData);
-        String propertyId = docRef.id;
-
-        // userHope マップと空の配列を追加
-        await FirebaseFirestore.instance.collection('properties').doc(propertyId).update({
-          'userHope': [], // userHope マップ内に空の配列を保存
-          'user_license': [], // user_license マップ内に空の配列を保存
-        });
+      // 2. 作成したドキュメントに対して、後からフィールドを追加する
+      await docRef.update({
+        'userHope': [],
+        'user_license': [],
+      });
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('物件情報を登録しました！')),
