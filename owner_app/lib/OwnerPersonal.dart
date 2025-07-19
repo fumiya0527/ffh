@@ -1,204 +1,371 @@
-import 'dart:typed_data';
-import 'package:flutter/material.dart';
-import 'package:multi_select_flutter/multi_select_flutter.dart';
-import 'package:intl/intl.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:firebase_auth/firebase_auth.dart'; 
-import 'package:firebase_storage/firebase_storage.dart'; 
-import 'firebase_options.dart';
-import 'Auth.dart';
-import 'OwnerHomeScreen.dart'; // OwnerHomeScreen がこのファイル内にあるか、正しくインポートされている前提
+// import 'dart:typed_data';
+// import 'package:flutter/material.dart';
+// import 'package:multi_select_flutter/multi_select_flutter.dart';
+// import 'package:intl/intl.dart';
+// import 'package:firebase_core/firebase_core.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:url_launcher/url_launcher.dart';
+// import 'package:firebase_auth/firebase_auth.dart'; 
+// import 'package:firebase_storage/firebase_storage.dart'; 
+// import 'firebase_options.dart';
+// import 'Auth.dart';
+// import 'OwnerHomeScreen.dart'; 
 
-// (OwnerHomeScreen クラスは以前の記憶に存在するため、ここでは省略します。)
+// // (OwnedPropertiesListScreen と OwnerPersonalInfoScreen は以前の記憶に存在するため、ここでは省略します。)
 
-// ★修正: OwnerPersonalInfoScreen に user_license チェックロジックを復活
-class OwnerPersonalInfoScreen extends StatefulWidget {
-  final String ownerId; // ログイン中のオーナーのUIDを受け取る
-  const OwnerPersonalInfoScreen({super.key, required this.ownerId});
+// // UserHopeListScreen は、興味を示したユーザーリストの表示と、許可/拒否ボタンの機能を持つ
+// class UserHopeListScreen extends StatefulWidget {
+//   final String propertyId;
+//   final List<String> userHopeList; // 興味を示したユーザーのUIDのリスト
 
-  @override
-  State<OwnerPersonalInfoScreen> createState() => _OwnerPersonalInfoScreenState();
-}
+//   const UserHopeListScreen({
+//     super.key,
+//     required this.propertyId,
+//     required this.userHopeList,
+//   });
 
-class _OwnerPersonalInfoScreenState extends State<OwnerPersonalInfoScreen> {
-  Map<String, dynamic>? _ownerData; // オーナーの個人情報
-  bool _isLoading = true; // ロード中フラグ
-  String? _errorMessage; // エラーメッセージ
-  bool _isLicensed = false; // ★復活: user_licenseにUIDがあるかどうかを示すフラグ
+//   @override
+//   State<UserHopeListScreen> createState() => _UserHopeListScreenState();
+// }
 
-  @override
-  void initState() {
-    super.initState();
-    _checkLicenseAndLoadOwnerData(); // 初期化時にライセンスチェックとデータ読み込み
-  }
+// class _UserHopeListScreenState extends State<UserHopeListScreen> {
+//   List<Map<String, dynamic>> _interestedUsersData = [];
+//   bool _isLoading = true;
+//   String? _errorMessage;
 
-  // オーナーの個人情報をFirestoreから取得し、user_licenseをチェックする関数
-  Future<void> _checkLicenseAndLoadOwnerData() async {
-    setState(() {
-      _isLoading = true; // ロード開始
-      _errorMessage = null; // エラーメッセージをリセット
-      _isLicensed = false; // フラグをリセット
-    });
+//   @override
+//   void initState() {
+//     super.initState();
+//     _fetchInterestedUsersData();
+//   }
 
-    try {
-      final String currentOwnerUid = widget.ownerId; // ログイン中のオーナーID
+//   // user_ID コレクションからユーザーデータを取得する
+//   Future<void> _fetchInterestedUsersData() async {
+//     setState(() {
+//       _isLoading = true;
+//       _errorMessage = null;
+//     });
 
-      // 1. 全ての物件の user_license をチェックし、オーナーUIDが含まれているか確認
-      // オーナーが登録した物件に絞ることも可能ですが、ここでは「どの物件のuser_licenseでも良い」と解釈します
-      QuerySnapshot propertiesSnapshot = await FirebaseFirestore.instance
-          .collection('properties')
-          .get();
+//     try {
+//       if (widget.userHopeList.isEmpty) {
+//         setState(() {
+//           _isLoading = false;
+//         });
+//         return;
+//       }
 
-      bool foundInLicense = false;
-      for (var doc in propertiesSnapshot.docs) {
-        List<dynamic> userLicenseList = (doc.data() as Map<String, dynamic>)['user_license'] ?? [];
-        if (userLicenseList.contains(currentOwnerUid)) {
-          foundInLicense = true;
-          break; // 見つかったらループ終了
-        }
-      }
+//       List<Map<String, dynamic>> fetchedUsers = [];
+//       for (String userId in widget.userHopeList) {
+//         DocumentSnapshot userDoc = await FirebaseFirestore.instance
+//             .collection('user_ID')
+//             .doc(userId)
+//             .get();
 
-      setState(() {
-        _isLicensed = foundInLicense; // ライセンスフラグを更新
-      });
+//         if (userDoc.exists && userDoc.data() != null) {
+//           Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+//           userData['uid'] = userDoc.id; // ドキュメントID（UID）も追加
+//           fetchedUsers.add(userData);
+//         } else {
+//           print('DEBUG: ユーザーID: $userId のデータが見つからないか空です。');
+//         }
+//       }
 
-      if (foundInLicense) {
-        // 2. user_license にUIDがあれば、そのUIDのuser_IDドキュメントを読み込む
-        DocumentSnapshot ownerDoc = await FirebaseFirestore.instance
-            .collection('user_ID')
-            .doc(currentOwnerUid)
-            .get();
+//       setState(() {
+//         _interestedUsersData = fetchedUsers;
+//         _isLoading = false;
+//       });
+//     } catch (e) {
+//       print('DEBUG: 興味あるユーザーデータの取得中にエラー: $e');
+//       setState(() {
+//         _errorMessage = 'ユーザーデータの読み込みに失敗しました: ${e.toString()}';
+//         _isLoading = false;
+//       });
+//     }
+//   }
 
-        if (ownerDoc.exists && ownerDoc.data() != null) {
-          setState(() {
-            _ownerData = ownerDoc.data() as Map<String, dynamic>;
-          });
-        } else {
-          // ドキュメントが見つからないか、データが空の場合
-          _errorMessage = 'オーナーの個人情報が見つかりません。'; // エラーメッセージを設定
-          _ownerData = null;
-        }
-      } else {
-        // user_license にUIDがない場合
-        // _errorMessage は設定せず、_isLicensed = false のままにしてUIで「権限がありません」と表示させる
-        _ownerData = null; // データは表示しない
-      }
-    } catch (e) {
-      // データ取得中の予期せぬエラー
-      _errorMessage = 'データ取得中にエラーが発生しました: ${e.toString()}'; // エラーメッセージを設定
-      _ownerData = null; // データは表示しない
-    } finally {
-      setState(() {
-        _isLoading = false; // ロード完了
-      });
-    }
-  }
+//   // ★修正: user_license と userHope を更新するメソッド（「許可する」「許可しない」ボタンの機能）
+//   Future<void> _handleUserAction(String userId, bool isApproved) async {
+//     final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+//     DocumentReference propertyDocRef = _firestore.collection('properties').doc(widget.propertyId);
 
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator()); // ロード中はインジケーターを表示
-    }
+//     try {
+//       if (isApproved) {
+//         // 「許可する」場合：user_license に追加し、userHope から削除
+//         await propertyDocRef.update({
+//           'user_license': FieldValue.arrayUnion([userId]), // user_license に追加
+//           'userHope': FieldValue.arrayRemove([userId]),    // userHope から削除
+//         });
+//         print('DEBUG: ユーザーID $userId を user_license に追加し、userHope から削除しました。');
 
-    // ★修正: user_license の有無に基づいてUIを切り替える
-    if (!_isLicensed) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.lock_outline, color: Colors.orange, size: 50),
-              SizedBox(height: 10),
-              Text(
-                '個人情報を表示するための権限がありません。\n（オーナーUIDがuser_licenseに登録されていません）',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.orange, fontSize: 16),
-              ),
-              // ★再試行ボタンは削除 (ご要望により)
-              // SizedBox(height: 20),
-              // ElevatedButton(
-              //   onPressed: _checkLicenseAndLoadOwnerData,
-              //   child: Text('再試行'),
-              // ),
-            ],
-          ),
-        ),
-      );
-    }
+//         // 処理成功後、新しい画面へ遷移し、そのユーザーの個人情報を表示
+//         if (mounted) {
+//           Navigator.push(
+//             context,
+//             MaterialPageRoute(
+//               builder: (context) => UserLicenseDetailScreen(userId: userId), // 新しい画面にユーザーIDを渡す
+//             ),
+//           ).then((_) => _fetchInterestedUsersData()); // 戻ってきたらデータを再取得してリスト更新
+//         }
 
-    // データがロードされたが、_ownerDataがnullの場合（_isLicensedがtrueでもデータが取得できない場合）
-    if (_ownerData == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.warning_amber_outlined, color: Colors.grey, size: 50),
-              SizedBox(height: 10),
-              Text(
-                _errorMessage ?? 'オーナーの個人情報が見つかりません。', // エラーメッセージがあれば表示
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+//       } else {
+//         // 「許可しない」場合：userHope から削除（user_licenseからの削除は不要）
+//         await propertyDocRef.update({
+//           'userHope': FieldValue.arrayRemove([userId]), // userHope から削除
+//           // 'user_license': FieldValue.arrayRemove([userId]), // 許可しない場合は user_license から削除しない（要件による）
+//         });
+//         print('DEBUG: ユーザーID $userId を userHope から削除しました。');
+//       }
+//     } catch (e) {
+//       print('DEBUG: ユーザー許可状態の更新に失敗しました: $e');
+//       // エラーメッセージは表示しない（指示による）
+//     } finally {
+//       // 処理が完了したら、最新の状態を再取得するためにデータをリフレッシュ
+//       _fetchInterestedUsersData();
+//     }
+//   }
 
-    // 個人情報が表示されるべき部分
-    final String familyName = _ownerData!['familyName'] ?? '不明';
-    final String givenName = _ownerData!['givenName'] ?? '不明';
-    final String birthDate = _ownerData!['birthDate'] ?? '不明';
-    final String email = _ownerData!['email'] ?? '不明';
-    final String nationality = _ownerData!['nationality'] ?? '不明';
-    final String phoneNumber = _ownerData!['phoneNumber'] ?? '不明';
-    final String residenceStatus = _ownerData!['residenceStatus'] ?? '不明';
-    final String residenceCardNumber = _ownerData!['residenceCardNumber'] ?? '不明';
-    final String emergencyContactName = _ownerData!['emergencyContactName'] ?? '不明';
-    final String emergencyContactPhoneNumber = _ownerData!['emergencyContactPhoneNumber'] ?? '不明';
-    final String emergencyContactRelationship = _ownerData!['emergencyContactRelationship'] ?? '不明';
-    final String stayDurationInJapan = _ownerData!['stayDurationInJapan'] ?? '不明';
-    final List<dynamic> selectedLanguages = _ownerData!['selectedLanguages'] ?? [];
-    final String currentAddress = _ownerData!['currentAddress'] ?? '不明';
-    final String guarantorSupport = _ownerData!['guarantorSupport'] ?? '不明';
-    final String initialPaymentMethod = _ownerData!['initialPaymentMethod'] ?? '不明';
-    final String contractPeriod = _ownerData!['contractPeriod'] ?? '不明';
-    final String screeningLanguageSupport = _ownerData!['screeningLanguageSupport'] ?? '不明';
+//   @override
+//   Widget build(BuildContext context) {
+//     if (_isLoading) {
+//       return Scaffold(
+//         appBar: AppBar(title: Text('ユーザーデータ取得中...')),
+//         body: const Center(child: CircularProgressIndicator()),
+//       );
+//     }
+
+//     if (_errorMessage != null) {
+//       return Scaffold(
+//         appBar: AppBar(title: const Text('エラー')),
+//         body: Center(child: Text(_errorMessage!)),
+//       );
+//     }
+
+//     if (widget.userHopeList.isEmpty || _interestedUsersData.isEmpty) {
+//       return Scaffold(
+//         appBar: AppBar(title: Text('物件ID: ${widget.propertyId} に興味のあるユーザー')),
+//         body: const Center(child: Text('この物件に興味を示したユーザーはまだいません。')),
+//       );
+//     }
+
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Text('物件ID: ${widget.propertyId} に興味のあるユーザー'),
+//       ),
+//       body: ListView.builder(
+//         itemCount: _interestedUsersData.length,
+//         itemBuilder: (context, index) {
+//           final userData = _interestedUsersData[index];
+//           final String userId = userData['uid'] ?? '不明なUID'; // UserIDを確実に取得
+
+//           // 表示したいプロフィール情報を取得
+//           final String familyName = userData['familyName'] ?? '不明';
+//           final String givenName = userData['givenName'] ?? '不明';
+//           final String birthDate = userData['birthDate'] ?? '不明';
+//           final String email = userData['email'] ?? '不明';
+//           final String nationality = userData['nationality'] ?? '不明';
+//           final String phoneNumber = userData['phoneNumber'] ?? '不明';
+//           final String residenceStatus = userData['residenceStatus'] ?? '不明';
+//           final String residenceCardNumber = userData['residenceCardNumber'] ?? '不明';
+//           final String emergencyContactName = userData['emergencyContactName'] ?? '不明';
+//           final String emergencyContactPhoneNumber = userData['emergencyContactPhoneNumber'] ?? '不明';
+//           final String emergencyContactRelationship = userData['emergencyContactRelationship'] ?? '不明';
+//           final String stayDurationInJapan = userData['stayDurationInJapan'] ?? '不明';
+//           final List<dynamic> selectedLanguages = userData['selectedLanguages'] ?? [];
+//           final String currentAddress = userData['currentAddress'] ?? '不明';
+//           final String guarantorSupport = userData['guarantorSupport'] ?? '不明';
+//           final String initialPaymentMethod = userData['initialPaymentMethod'] ?? '不明';
+//           final String contractPeriod = userData['contractPeriod'] ?? '不明';
+//           final String screeningLanguageSupport = userData['screeningLanguageSupport'] ?? '不明';
 
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'オーナーの個人情報',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
-          ),
-          const SizedBox(height: 10),
-          Text('氏名: $familyName $givenName'),
-          Text('メールアドレス: $email'),
-          Text('電話番号: $phoneNumber'),
-          Text('国籍: $nationality'),
-          Text('生年月日: $birthDate'),
-          Text('現在の住所: $currentAddress'),
-          Text('在留資格: $residenceStatus'),
-          Text('在留カード番号: $residenceCardNumber'),
-          Text('日本での滞在期間: $stayDurationInJapan'),
-          Text('話せる言語: ${selectedLanguages.join(', ')}'),
-          Text('緊急連絡先: $emergencyContactName ($emergencyContactRelationship, $emergencyContactPhoneNumber)'),
-          Text('保証人サポート: $guarantorSupport'),
-          Text('初期費用支払い方法: $initialPaymentMethod'),
-          Text('契約期間: $contractPeriod'),
-          Text('入居審査言語サポート: $screeningLanguageSupport'),
-          // 他の個人情報もここに追加
-        ],
-      ),
-    );
-  }
-}
+//           return Card(
+//             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+//             elevation: 3,
+//             child: Padding(
+//               padding: const EdgeInsets.all(16.0),
+//               child: Column(
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: [
+//                   Text('ユーザー名: $familyName $givenName', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+//                   Text('ユーザーID: $userId', style: const TextStyle(fontSize: 12, color: Colors.grey)), // UIDも表示
+//                   Text('メールアドレス: $email'),
+//                   Text('電話番号: $phoneNumber'),
+//                   Text('国籍: $nationality'),
+//                   Text('生年月日: $birthDate'),
+//                   Text('現在の住所: $currentAddress'),
+//                   Text('在留資格: $residenceStatus'),
+//                   Text('在留カード番号: $residenceCardNumber'),
+//                   Text('日本での滞在期間: $stayDurationInJapan'),
+//                   Text('話せる言語: ${selectedLanguages.join(', ')}'),
+//                   Text('緊急連絡先: $emergencyContactName ($emergencyContactRelationship, $emergencyContactPhoneNumber)'),
+//                   Text('保証人サポート: $guarantorSupport'),
+//                   Text('初期費用支払い方法: $initialPaymentMethod'),
+//                   Text('契約期間: $contractPeriod'),
+//                   Text('入居審査言語サポート: $screeningLanguageSupport'),
+//                   const SizedBox(height: 16.0), // ボタンとのスペース
+
+//                   // 「許可する」「許可しない」ボタン
+//                   Row(
+//                     mainAxisAlignment: MainAxisAlignment.end, // 右寄せにする
+//                     children: [
+//                       ElevatedButton(
+//                         onPressed: () => _handleUserAction(userId, true), // 許可する処理を呼び出す
+//                         style: ElevatedButton.styleFrom(
+//                           backgroundColor: Colors.green, // 許可の色
+//                           foregroundColor: Colors.white,
+//                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+//                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+//                         ),
+//                         child: const Text('許可する'),
+//                       ),
+//                       const SizedBox(width: 10), // ボタン間のスペース
+//                       ElevatedButton(
+//                         onPressed: () => _handleUserAction(userId, false), // 許可しない処理を呼び出す
+//                         style: ElevatedButton.styleFrom(
+//                           backgroundColor: Colors.red, // 許可しないの色
+//                           foregroundColor: Colors.white,
+//                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+//                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+//                         ),
+//                         child: const Text('許可しない'),
+//                       ),
+//                     ],
+//                   ),
+//                 ],
+//               ),
+//             ),
+//           );
+//         },
+//       ),
+//     );
+//   }
+// }
+
+// // ★追加: 許可されたユーザーの詳細情報を表示する新しい画面
+// class UserLicenseDetailScreen extends StatefulWidget {
+//   final String userId; // 詳細を表示するユーザーのUID
+
+//   const UserLicenseDetailScreen({super.key, required this.userId});
+
+//   @override
+//   State<UserLicenseDetailScreen> createState() => _UserLicenseDetailScreenState();
+// }
+
+// class _UserLicenseDetailScreenState extends State<UserLicenseDetailScreen> {
+//   Map<String, dynamic>? _userDetails; // ユーザーの個人情報
+//   bool _isLoading = true; // ロード中フラグ
+//   String? _errorMessage; // エラーメッセージ
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _fetchUserDetails(); // 初期化時にユーザーデータを取得
+//   }
+
+//   Future<void> _fetchUserDetails() async {
+//     setState(() {
+//       _isLoading = true;
+//       _errorMessage = null;
+//     });
+
+//     try {
+//       DocumentSnapshot userDoc = await FirebaseFirestore.instance
+//           .collection('user_ID')
+//           .doc(widget.userId)
+//           .get();
+
+//       if (userDoc.exists && userDoc.data() != null) {
+//         setState(() {
+//           _userDetails = userDoc.data() as Map<String, dynamic>;
+//         });
+//       } else {
+//         _errorMessage = 'ユーザー情報が見つかりません。';
+//         _userDetails = null;
+//       }
+//     } catch (e) {
+//       _errorMessage = 'ユーザー情報の取得中にエラーが発生しました: ${e.toString()}';
+//       _userDetails = null;
+//     } finally {
+//       setState(() {
+//         _isLoading = false;
+//       });
+//     }
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     if (_isLoading) {
+//       return Scaffold(
+//         appBar: AppBar(title: const Text('ユーザー情報読み込み中...')),
+//         body: const Center(child: CircularProgressIndicator()),
+//       );
+//     }
+
+//     if (_errorMessage != null) {
+//       return Scaffold(
+//         appBar: AppBar(title: const Text('エラー')),
+//         body: Center(child: Text(_errorMessage!)),
+//       );
+//     }
+
+//     if (_userDetails == null) {
+//       return Scaffold(
+//         appBar: AppBar(title: const Text('ユーザー情報')),
+//         body: const Center(child: Text('ユーザー情報が見つかりません。')),
+//       );
+//     }
+
+//     // ユーザー情報の項目は UserRegistrationScreen のフィールド名と一致させています
+//     final String familyName = _userDetails!['familyName'] ?? '不明';
+//     final String givenName = _userDetails!['givenName'] ?? '不明';
+//     final String birthDate = _userDetails!['birthDate'] ?? '不明';
+//     final String email = _userDetails!['email'] ?? '不明';
+//     final String nationality = _userDetails!['nationality'] ?? '不明';
+//     final String phoneNumber = _userDetails!['phoneNumber'] ?? '不明';
+//     final String residenceStatus = _userDetails!['residenceStatus'] ?? '不明';
+//     final String residenceCardNumber = _userDetails!['residenceCardNumber'] ?? '不明';
+//     final String emergencyContactName = _userDetails!['emergencyContactName'] ?? '不明';
+//     final String emergencyContactPhoneNumber = _userDetails!['emergencyContactPhoneNumber'] ?? '不明';
+//     final String emergencyContactRelationship = _userDetails!['emergencyContactRelationship'] ?? '不明';
+//     final String stayDurationInJapan = _userDetails!['stayDurationInJapan'] ?? '不明';
+//     final List<dynamic> selectedLanguages = _userDetails!['selectedLanguages'] ?? [];
+//     final String currentAddress = _userDetails!['currentAddress'] ?? '不明';
+//     final String guarantorSupport = _userDetails!['guarantorSupport'] ?? '不明';
+//     final String initialPaymentMethod = _userDetails!['initialPaymentMethod'] ?? '不明';
+//     final String contractPeriod = _userDetails!['contractPeriod'] ?? '不明';
+//     final String screeningLanguageSupport = _userDetails!['screeningLanguageSupport'] ?? '不明';
+
+
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Text('ユーザー: $familyName $givenName'),
+//       ),
+//       body: SingleChildScrollView(
+//         padding: const EdgeInsets.all(16.0),
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             Text('ユーザーID: ${widget.userId}', style: const TextStyle(fontSize: 14, color: Colors.grey)),
+//             const SizedBox(height: 10),
+//             Text('氏名: $familyName $givenName', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+//             Text('メールアドレス: $email'),
+//             Text('電話番号: $phoneNumber'),
+//             Text('国籍: $nationality'),
+//             Text('生年月日: $birthDate'),
+//             Text('現在の住所: $currentAddress'),
+//             Text('在留資格: $residenceStatus'),
+//             Text('在留カード番号: $residenceCardNumber'),
+//             Text('日本での滞在期間: $stayDurationInJapan'),
+//             Text('話せる言語: ${selectedLanguages.join(', ')}'),
+//             Text('緊急連絡先: $emergencyContactName ($emergencyContactRelationship, $emergencyContactPhoneNumber)'),
+//             Text('保証人サポート: $guarantorSupport'),
+//             Text('初期費用支払い方法: $initialPaymentMethod'),
+//             Text('契約期間: $contractPeriod'),
+//             Text('入居審査言語サポート: $screeningLanguageSupport'),
+//             // 他の個人情報もここに追加
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }

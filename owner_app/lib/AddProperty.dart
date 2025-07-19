@@ -215,6 +215,8 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
         await FirebaseFirestore.instance.collection('properties').doc(propertyId).update({
           'userHope': [], // userHope マップ内に空の配列を保存
           'user_license': [], // user_license マップ内に空の配列を保存
+          'owner_schedule':[],
+          
         });
 
         ScaffoldMessenger.of(context).showSnackBar(

@@ -1,18 +1,11 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:multi_select_flutter/multi_select_flutter.dart';
-import 'package:intl/intl.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart'; 
-import 'firebase_options.dart';
-import 'Auth.dart';
-import 'main.dart';
+
+// 依存する他のファイルをインポートします
 import 'AddProperty.dart';
 import 'OwnedProperties.dart';
-import 'OwnerPersonal.dart';
+// import 'OwnerPersonal.dart'; // ← OwnerPersonalInfoScreenをこのファイルに持ってきたので、この行は不要になります。コメントアウトしてください。
+
 
 //オーナーホーム画面クラス
 class OwnerHomeScreen extends StatefulWidget {
@@ -26,19 +19,24 @@ class OwnerHomeScreen extends StatefulWidget {
 class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   int _selectedIndex = 0;
 
+  // 表示する画面のリスト
   late final List<Widget> _widgetOptions;
 
   @override
   void initState() {
     super.initState();
+    // BottomNavigationBarの各タブに対応する画面を定義します。
     _widgetOptions = <Widget>[
-      //OwnerPersonalInfoScreen(ownerId: widget.currentOwnerId),
+      // 1番目のタブ: 物件一覧画面
       OwnedPropertiesListScreen(currentOwnerId: widget.currentOwnerId),
+      // 2番目のタブ: 物件追加画面
       const AddPropertyScreen(),
+      // 3番目のタブ: オーナーの個人情報画面
       OwnerPersonalInfoScreen(ownerId: widget.currentOwnerId),
     ];
   }
 
+  // タブがタップされたときに呼ばれるメソッド
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -57,9 +55,11 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('ログアウトしました。')),
-              );
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('ログアウトしました。')),
+                );
+              }
             },
           ),
         ],
@@ -69,7 +69,6 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
-          
           BottomNavigationBarItem(
             icon: Icon(Icons.apartment),
             label: '物件一覧',
@@ -93,18 +92,49 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   }
 }
 
-// class OwnerPersonalInfoScreen extends StatelessWidget {
-//   final String ownerId;
-//   const OwnerPersonalInfoScreen({super.key, required this.ownerId});
+class OwnerPersonalInfoScreen extends StatelessWidget {
+  final String ownerId;
+  const OwnerPersonalInfoScreen({super.key, required this.ownerId});
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Center(
-//       child: Text(
-//         '個人情報設定画面\n(ログイン中のオーナーID: ${ownerId})\nここにユーザー名、連絡先などの設定UIを実装',
-//         textAlign: TextAlign.center,
-//         style: const TextStyle(fontSize: 18, color: Colors.black54),
-//       ),
-//     );
-//   }
-// }
+  @override
+  Widget build(BuildContext context) {
+    // この画面はbody部分だけを使うのでScaffoldは不要
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '個人情報設定',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).primaryColor,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'ログイン中のオーナーID:',
+              style: const TextStyle(fontSize: 16),
+            ),
+            Text(
+              ownerId,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.black54,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 30),
+            const Text(
+              '（ここにユーザー名、連絡先などの設定UIを実装予定）',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
