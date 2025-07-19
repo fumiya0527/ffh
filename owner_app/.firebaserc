@@ -5,8 +5,8 @@
   "targets": {
     "ffh-firebase": {
       "hosting": {
-        "user-site": [
-          "ffh-firebase"
+        "owner-site": [
+          "ffh-userapp"
         ]
       }
     }

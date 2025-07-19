@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'firebase_options.dart'; 
 import 'package:ffh/house_select.dart'; // ffh/house_select.dart のパスを正確に
 import 'package:firebase_auth/firebase_auth.dart';
+import 'reserve.dart';
 
 
 // void main() async {
@@ -51,14 +52,14 @@ class AppRootScreen extends StatefulWidget {
 
 class _AppRootScreenState extends State<AppRootScreen> {
   int _selectedIndex = 0;
-  // UserInterestStatusScreen の currentUserId は、実際のログインユーザーのUIDに置き換える必要があります
-  // 例: UserInterestStatusScreen(currentUserId: FirebaseAuth.instance.currentUser?.uid ?? 'default_guest_id'),
+  
+  // ▼▼▼ ここのウィジェットリストを修正 ▼▼▼
   static const List<Widget> _widgetOptions = <Widget>[
     MainScreen(),
-    UserInterestStatusScreen(currentUserId: 'user_abc_123'), // ダミーID。要修正。
+    UserInterestStatusScreen(), // 引数を削除
     SettingsScreen(),
   ];
-  
+  // ▲▲▲ ここまで修正 ▲▲▲
 
   void _onItemTapped(int index) {
     setState(() {
@@ -72,18 +73,9 @@ class _AppRootScreenState extends State<AppRootScreen> {
       body: _widgetOptions.elementAt(_selectedIndex),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: '物件を見る',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'あなたの状況',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: '設定',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: '物件を見る'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'あなたの状況'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: '設定'),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.amber[800],
@@ -574,105 +566,129 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 }
 
-class UserInterestStatusScreen extends StatelessWidget {
-  final String currentUserId;
 
-  const UserInterestStatusScreen({super.key, required this.currentUserId});
+class UserInterestStatusScreen extends StatefulWidget {
+  const UserInterestStatusScreen({super.key});
+
+  @override
+  State<UserInterestStatusScreen> createState() => _UserInterestStatusScreenState();
+}
+
+class _UserInterestStatusScreenState extends State<UserInterestStatusScreen> {
+  final User? currentUser = FirebaseAuth.instance.currentUser;
 
   @override
   Widget build(BuildContext context) {
+    if (currentUser == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('あなたの状況')),
+        body: const Center(child: Text('この機能を利用するにはログインが必要です。')),
+      );
+    }
+
+    final String currentUserId = currentUser!.uid;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('あなたの意思表示状況')),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('userInterests')
-            .where('userId', isEqualTo: currentUserId)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text('データ取得失敗: ${snapshot.error}'));
-          }
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final myInterests = snapshot.data!.docs;
-          if (myInterests.isEmpty) {
-            return const Center(child: Text('まだ物件への意思表示はしていません。'));
-          }
-
-          return ListView.builder(
-            itemCount: myInterests.length,
-            itemBuilder: (context, index) {
-              final data = myInterests[index].data() as Map<String, dynamic>;
-              final String? ownerResponseUrl = data['ownerResponseUrl'] as String?;
-              final String status = data['status'] as String? ?? 'pending';
-
-              String statusText;
-              Color statusColor;
-              switch (status) {
-                case 'pending':
-                  statusText = '保留中：オーナーからの返答をお待ちください。';
-                  statusColor = Colors.orange;
-                  break;
-                case 'accepted':
-                  statusText = '承認されました！';
-                  statusColor = Colors.green;
-                  break;
-                case 'rejected':
-                  statusText = '却下されました。';
-                  statusColor = Colors.red;
-                  break;
-                default:
-                  statusText = '不明なステータス';
-                  statusColor = Colors.grey;
-              }
-
-              final Timestamp? timestamp = data['timestamp'] as Timestamp?;
-              String formattedTime = '日時不明';
-              if (timestamp != null) {
-                formattedTime = DateFormat('yyyy/MM/dd HH:mm:ss').format(timestamp.toDate());
-              }
-
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                elevation: 2,
-                child: ListTile(
-                  title: Text('物件ID: ${data['propertyId'] ?? '不明'}'),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(statusText, style: TextStyle(fontWeight: FontWeight.bold, color: statusColor)),
-                      if (status == 'accepted' && ownerResponseUrl != null && ownerResponseUrl.isNotEmpty)
-                        InkWell(
-                          onTap: () async {
-                            final uri = Uri.parse(ownerResponseUrl);
-                            if (await canLaunchUrl(uri)) {
-                              await launchUrl(uri);
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('URLを開けませんでした: $ownerResponseUrl'))
-                              );
-                            }
-                          },
-                          child: Text(
-                            '対談URL: $ownerResponseUrl をクリックして開く',
-                            style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
-                          ),
+      appBar: AppBar(title: const Text('あなたの状況')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- 承認された物件リスト ---
+            const Text('✅ 承認された物件', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
+            const SizedBox(height: 8),
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('properties').where('user_license', arrayContains: currentUserId).snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return const Card(child: ListTile(title: Text('承認された物件はまだありません。')));
+                
+                final properties = snapshot.data!.docs;
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: properties.length,
+                  itemBuilder: (context, index) {
+                    final propertyDoc = properties[index];
+                    final data = propertyDoc.data() as Map<String, dynamic>;
+                    return Card(
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(Icons.check_circle, color: Colors.green, size: 32),
+                              title: Text(data['propertyName'] ?? '名称不明', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              subtitle: const Text('オーナーから承認されました！'),
+                            ),
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                icon: const Icon(Icons.calendar_today),
+                                label: const Text('Zoom面談の日程を調整する'),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ScheduleRequestScreen(
+                                        propertyId: propertyDoc.id,
+                                        ownerId: data['ownerId'],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
                         ),
-                      if (status == 'pending')
-                        const Text('オーナーからの返答をしばらくお待ちください。'),
-                      Text('意思表示日時: $formattedTime'),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+            const SizedBox(height: 30),
+            // --- 返答待ちの物件リスト ---
+            const Text('⏳ 返答待ちの物件', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
+            const SizedBox(height: 8),
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('properties').where('userHope', arrayContains: currentUserId).snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return const Card(child: ListTile(title: Text('返答待ちの物件はありません。')));
+                
+                final properties = snapshot.data!.docs;
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: properties.length,
+                  itemBuilder: (context, index) {
+                    final data = properties[index].data() as Map<String, dynamic>;
+                    return Card(
+                      elevation: 2,
+                      child: ListTile(
+                        leading: const Icon(Icons.hourglass_top, color: Colors.orange),
+                        title: Text(data['propertyName'] ?? '名称不明'),
+                        subtitle: const Text('オーナーからの返答をお待ちください。'),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -687,3 +703,4 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 }
+

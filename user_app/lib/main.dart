@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart'; // Firebase Coreをインポート
 import 'firebase_options.dart'; // Firebase Optionsをインポート
 import 'start.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async { // main関数を非同期にする
   WidgetsFlutterBinding.ensureInitialized(); // Flutterバインディングの初期化を保証
@@ -16,7 +17,7 @@ void main() async { // main関数を非同期にする
     // Firebase初期化失敗時のエラーハンドリング（例: ユーザーへの通知）
     // runApp(ErrorApp(errorMessage: 'Firebaseの初期化に失敗しました: $e')); のような対処も可能
   }
-
+  await initializeDateFormatting('ja_JP', null);
   runApp(MyApp());
 }
 
