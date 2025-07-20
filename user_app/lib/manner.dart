@@ -82,7 +82,7 @@ class MannerScreen extends StatelessWidget {
                   height: 55,
                   child: ElevatedButton(
                     onPressed: () {
-                      _launchURL('https://drive.google.com/file/d/1iLa-dmVviF42X1uSbgsNc_op-fjcmc3d/view?usp=drive_link');
+                      _launchURL('https://drive.google.com/file/d/1vrkutI5mjecmqeejPJbvVw87RvvRVykt/view?usp=drive_link');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: mainColor,
@@ -116,7 +116,7 @@ class MannerScreen extends StatelessWidget {
                   height: 55,
                   child: ElevatedButton(
                     onPressed: () {
-                      _launchURL('https://drive.google.com/file/d/10TSoY3ldXm72c_Zpwdo9AS_r9t7s2blc/view?usp=drive_link');
+                      _launchURL('https://drive.google.com/file/d/15CMXu2UYdGq6o0hKyNEGTc58JVZ5Uo2F/view?usp=drive_link');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: mainColor,

@@ -19,6 +19,7 @@ class ScheduleRequestScreen extends StatefulWidget {
 
 class _ScheduleRequestScreenState extends State<ScheduleRequestScreen> {
   final List<DateTime> _selectedSlots = [];
+  bool _isLoading = false;
 
   Future<void> _pickDateTime() async {
     if (_selectedSlots.length >= 3) {
@@ -43,45 +44,95 @@ class _ScheduleRequestScreenState extends State<ScheduleRequestScreen> {
     });
   }
 
+  // ▼▼▼ この関数を修正しました ▼▼▼
   Future<void> _submitScheduleRequest() async {
     if (_selectedSlots.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('希望日時を1つ以上選択してください。')));
       return;
     }
     final User? currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) return;
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ログインが必要です。')));
+      return;
+    }
+
+    setState(() => _isLoading = true);
 
     try {
-      await FirebaseFirestore.instance.collection('schedules').add({
+      final db = FirebaseFirestore.instance;
+      final userDocRef = db.collection('user_ID').doc(currentUser.uid);
+
+      // --- 1. ユーザーの現在のカレンダー情報を取得 ---
+      final userDoc = await userDocRef.get();
+      final List<dynamic> userCalendar = (userDoc.data()?['UserCalendar'] as List<dynamic>?) ?? [];
+      
+      // --- 2. この物件の予定が既に存在するか探す ---
+      int scheduleIndex = userCalendar.indexWhere((s) => s['propertyId'] == widget.propertyId);
+
+      // --- 3. 新しい申請情報を作成 ---
+      final newScheduleData = {
         'propertyId': widget.propertyId,
         'ownerId': widget.ownerId,
-        'userId': currentUser.uid,
         'desiredTimes': _selectedSlots.map((dt) => Timestamp.fromDate(dt)).toList(),
-        'status': 'requested', // ステータスを「申請済み」に
-        'zoomLink': null,
-        'confirmedTime': null, // 確定日時はまだnull
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+        'status': 'requested',
+        'confirmedTime': null,
+        'zoomLink': '',
+      };
 
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('日程調整の希望を送信しました'),
-            content: const Text('オーナーからの連絡をお待ちください。'),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
+      // --- 4. 既存の予定を更新するか、新規で追加するかを判断 ---
+      if (scheduleIndex != -1) {
+        // 存在する場合 (再調整) は、その予定を更新
+        userCalendar[scheduleIndex] = newScheduleData;
+      } else {
+        // 存在しない場合 (新規) は、リストに新しい予定を追加
+        userCalendar.add(newScheduleData);
+      }
+
+      // --- 5. データベースを更新 ---
+      final batch = db.batch();
+
+      // 操作①: 更新されたカレンダーリストでユーザー情報を更新
+      batch.update(userDocRef, {'UserCalendar': userCalendar});
+      
+      // 操作②: 新規の場合のみ、承認リストからIDを削除
+      if (scheduleIndex == -1) {
+        final propertyDocRef = db.collection('properties').doc(widget.propertyId);
+        batch.update(propertyDocRef, {
+          'user_license': FieldValue.arrayRemove([currentUser.uid])
+        });
+      }
+
+      await batch.commit();
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('日程調整の希望を送信しました'),
+              content: const Text('オーナーからの連絡をお待ちください。'),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('エラーが発生しました: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('エラーが発生しました: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
+  // ▲▲▲ ここまで修正 ▲▲▲
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +150,7 @@ class _ScheduleRequestScreenState extends State<ScheduleRequestScreen> {
                       itemBuilder: (context, index) {
                         final slot = _selectedSlots[index];
                         return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 6),
                           child: ListTile(
                             leading: CircleAvatar(child: Text('${index + 1}')),
                             title: Text(DateFormat('yyyy年MM月dd日 (E)', 'ja_JP').format(slot)),
@@ -119,7 +171,7 @@ class _ScheduleRequestScreenState extends State<ScheduleRequestScreen> {
                 icon: const Icon(Icons.add),
                 label: const Text('希望日時を追加'),
                 style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 15)),
-                onPressed: _selectedSlots.length < 3 ? _pickDateTime : null,
+                onPressed: _selectedSlots.length < 3 && !_isLoading ? _pickDateTime : null,
               ),
             ),
             const SizedBox(height: 20),
@@ -127,8 +179,10 @@ class _ScheduleRequestScreenState extends State<ScheduleRequestScreen> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: _submitScheduleRequest,
-                child: const Text('この内容で希望を送信'),
+                onPressed: _isLoading ? null : _submitScheduleRequest,
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('この内容で希望を送信'),
               ),
             ),
           ],

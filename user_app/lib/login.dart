@@ -299,7 +299,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         Navigator.pushAndRemoveUntil( // これまでのスタックをクリアして遷移
           context,
-          MaterialPageRoute(builder: (context) => const QuizScreen()), // ★ここをQuizScreenに変更
+          MaterialPageRoute(builder: (context) => const HouseSelectScreen()), // ★ここをQuizScreenに変更
           (Route<dynamic> route) => false,
         );
       }
