@@ -122,9 +122,9 @@ class _MainScreenState extends State<MainScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final List<List<List<String>>> propertyImages = [
-    [['assets/home1.jpg', 'assets/home1_1.jpg', 'assets/home1_2.jpg'] ,['PHIgANlo1dljSxOT2ymB']],
-    [['assets/home2.jpg', 'assets/home2_1.jpg'],[ 'UYhCХEd5qR0tCsG3o2РС']],
-    [['assets/home3.jpg', 'assets/home3_1.jpg'],[ 'twWytYCGkUhpHnfpvZQf']],
+    [['assets/homedate1.jpg', 'assets/homedate1_1.jpg'] ,['PHIgANlo1dljSxOT2ymB']],
+    [['assets/homedate2.jpg', 'assets/homedate2_2.jpg'],[ 'UYhCХEd5qR0tCsG3o2РС']],
+    [['assets/homedate3.jpg', 'assets/homedate3_1.jpg'],[ 'twWytYCGkUhpHnfpvZQf']],
   ];
   int currentIndex = 0;
   
@@ -176,62 +176,77 @@ class _MainScreenState extends State<MainScreen> {
     if (_userDesiredConditions != null) { await _filterProperties(); }
   }
   
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          Hero(
-            tag: 'imageHero',
-            child: GestureDetector(
-              onTap: () {
-                final List<String> currentPropertyImagePaths = propertyImages[currentIndex][0].where((path) => path.endsWith('.jpg')).toList();
-                Navigator.push(context, MaterialPageRoute(builder: (context) => DetailScreen(
-                  initialImagePath: currentPropertyImagePaths.isNotEmpty ? currentPropertyImagePaths[0] : '',
-                  propertyImages: propertyImages[currentIndex][0] + propertyImages[currentIndex][1],
-                )));
-              },
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12.0),
-                child: AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: Image.asset(propertyImages[currentIndex][0][0], fit: BoxFit.cover)
+@override
+Widget build(BuildContext context) {
+  // Scaffoldでページ全体の土台を作る
+  return Scaffold(
+    // body全体をSingleChildScrollViewで囲むことで、縦スクロールを可能にする
+    body: SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Hero(
+              tag: 'imageHero',
+              child: GestureDetector(
+                onTap: () {
+                  final List<String> currentPropertyImagePaths = propertyImages[currentIndex][0].where((path) => path.endsWith('.jpg')).toList();
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => DetailScreen(
+                    initialImagePath: currentPropertyImagePaths.isNotEmpty ? currentPropertyImagePaths[0] : '',
+                    propertyImages: propertyImages[currentIndex][0] + propertyImages[currentIndex][1],
+                  )));
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12.0),
+                  child: AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: Image.asset(propertyImages[currentIndex][0][0], fit: BoxFit.cover)
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavButton(Icons.arrow_back, '前の物件へ', () => setState(() => currentIndex = (currentIndex + propertyImages.length - 1) % propertyImages.length)),
-              _buildNavButton(Icons.arrow_forward, '次の物件へ', () => setState(() => currentIndex = (currentIndex + 1) % propertyImages.length)),
-            ],
-          ),
-          const Divider(height: 40),
-          Text('あなたに合致する物件', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: mainColor/*Theme.of(context).primaryColorDark*/)),
-          const SizedBox(height: 8),
-          Expanded(
-            child: _matchingProperties.isEmpty
-                ? const Center(child: Text('該当する物件はありません。'))
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavButton(Icons.arrow_back, '前の物件へ', () => setState(() => currentIndex = (currentIndex + propertyImages.length - 1) % propertyImages.length)),
+                _buildNavButton(Icons.arrow_forward, '次の物件へ', () => setState(() => currentIndex = (currentIndex + 1) % propertyImages.length)),
+              ],
+            ),
+            const Divider(height: 40),
+            Text('あなたに合致する物件', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: mainColor)),
+            const SizedBox(height: 8),
+
+            // ▼▼▼ ここを修正 ▼▼▼
+            // Expandedを削除し、ListView.builderに設定を追加
+            _matchingProperties.isEmpty
+                ? const Center(child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 32.0),
+                    child: Text('該当する物件はありません。'),
+                  ))
                 : ListView.builder(
+                    // この2行を追加
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+
                     itemCount: _matchingProperties.length,
                     itemBuilder: (context, index) {
                       return Card(
                         child: ListTile(
-                          leading: Icon(Icons.home_work_outlined, color: mainColor/*Theme.of(context).primaryColor*/),
+                          leading: Icon(Icons.home_work_outlined, color: mainColor),
                           title: Text(_matchingProperties[index]['propertyName'] ?? '名称不明'),
                           subtitle: Text('${_matchingProperties[index]['city'] ?? ''} ${_matchingProperties[index]['rent']?.toString() ?? ''}円'),
                         ),
                       );
                     },
                   ),
-          ),
-        ],
+            // ▲▲▲ ここまで修正 ▲▲▲
+          ],
+        ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildNavButton(IconData icon, String label, VoidCallback onPressed) {
     return SizedBox(

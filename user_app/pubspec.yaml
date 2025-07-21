@@ -33,13 +33,12 @@ flutter:
 
   uses-material-design: true
   assets:
-  -  assets/home1.jpg
-  -  assets/home2.jpg
-  -  assets/home3.jpg
-  -  assets/home1_1.jpg
-  -  assets/home1_2.jpg
-  -  assets/home2_1.jpg
-  -  assets/home3_1.jpg
+  -  assets/homedate1.jpg
+  -  assets/homedate2.jpg
+  -  assets/homedate3.jpg
+  -  assets/homedate1_1.jpg
+  -  assets/homedate2_2.jpg
+  -  assets/homedate3_1.jpg
 
   
 
