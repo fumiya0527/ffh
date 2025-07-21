@@ -67,7 +67,6 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
   String? _selectedTown;
   List<String> _townsForSelectedCity = []; 
   
-
   final Map<String, List<String>> _townsByCity = {
     '神戸市東灘区': ['青木', '魚崎北町', '魚崎中町', '魚崎西町', '魚崎浜町', '魚崎南町', '岡本', '鴨子ヶ原', '北青木',
     '甲南台', '甲南町', '向洋町中', '向洋町西', '向洋町東', '住吉台', '住吉浜手', '住吉本町', '住吉宮町',
