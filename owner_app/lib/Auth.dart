@@ -21,9 +21,7 @@ class AuthSystem extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
         if (snapshot.hasData) {
           return OwnerHomeScreen(currentOwnerId: snapshot.data!.uid);
@@ -34,7 +32,6 @@ class AuthSystem extends StatelessWidget {
   }
 }
 
-//ログイン画面クラスAuthScreen
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
 
@@ -51,23 +48,18 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       if (_isLogin) {
         await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: _emailController.text,
+          email: _emailController.text.trim(),
           password: _passwordController.text,
-        );
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ログインしました！')),
         );
       } else {
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: _emailController.text,
+          email: _emailController.text.trim(),
           password: _passwordController.text,
         );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('登録しました！ログインしてください。')),
         );
-        setState(() {
-          _isLogin = true;
-        });
+        setState(() => _isLogin = true);
       }
     } on FirebaseAuthException catch (e) {
       String message;
@@ -82,13 +74,7 @@ class _AuthScreenState extends State<AuthScreen> {
       } else {
         message = '認証エラーが発生しました: ${e.message}';
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('エラーが発生しました: ${e.toString()}')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -103,36 +89,45 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(_isLogin ? 'オーナーログイン' : 'オーナー登録')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'メールアドレス'),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'パスワード'),
-              obscureText: true,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _authenticate,
-              child: Text(_isLogin ? 'ログイン' : '登録'),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _isLogin = !_isLogin;
-                });
-              },
-              child: Text(_isLogin ? 'アカウントをお持ちでない方はこちら（登録）' : '既にアカウントをお持ちの方はこちら（ログイン）'),
-            ),
-          ],
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.business_center_outlined, size: 100, color: Theme.of(context).primaryColor),
+              const SizedBox(height: 20),
+              Text(
+                'オーナー専用',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColorDark),
+              ),
+              const SizedBox(height: 40),
+              TextField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'メールアドレス', prefixIcon: Icon(Icons.email_outlined)),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: _passwordController,
+                decoration: const InputDecoration(labelText: 'パスワード', prefixIcon: Icon(Icons.lock_outline)),
+                obscureText: true,
+              ),
+              const SizedBox(height: 40),
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  onPressed: _authenticate,
+                  child: Text(_isLogin ? 'ログイン' : '登録'),
+                ),
+              ),
+              TextButton(
+                onPressed: () => setState(() => _isLogin = !_isLogin),
+                child: Text(_isLogin ? 'アカウントをお持ちでない方はこちら' : '既にアカウントをお持ちの方はこちら'),
+              ),
+            ],
+          ),
         ),
       ),
     );

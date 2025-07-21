@@ -356,22 +356,14 @@ class _UserHopeListScreenState extends State<UserHopeListScreen> {
                     children: [
                       ElevatedButton(
                         onPressed: () => _updateUserHopeAndLicense(userId, true), // ★修正点: 許可する場合
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green, // 許可の色
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                         child: const Text('許可する'),
                       ),
                       const SizedBox(width: 10), // ボタン間のスペース
                       ElevatedButton(
                         onPressed: () => _updateUserHopeAndLicense(userId, false), // ★修正点: 許可しない場合
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red, // 許可しないの色
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          backgroundColor: Colors.red
                         ),
                         child: const Text('許可しない'),
                       ),

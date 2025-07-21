@@ -10,6 +10,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'firebase_options.dart';
 import 'Auth.dart';
 import 'OwnerHomeScreen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,17 +29,56 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  @override
+    @override
   Widget build(BuildContext context) {
+    // ユーザーアプリと共通のデザイン定義
+    const Color mainBackgroundColor = Color(0xFFEFF7F6);
+    final Color mainColor = Colors.teal[800]!;
+
     return MaterialApp(
       title: 'オーナー向け物件アプリ',
       theme: ThemeData(
+        // --- 基本設定 ---
         primarySwatch: Colors.teal,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.blueGrey,
+        scaffoldBackgroundColor: mainBackgroundColor,
+        
+        // --- フォント設定 ---
+        textTheme: GoogleFonts.notoSansJpTextTheme(Theme.of(context).textTheme),
+        
+        // --- 各ウィジェットの共通デザイン ---
+        appBarTheme: AppBarTheme(
+          backgroundColor: mainColor,
           foregroundColor: Colors.white,
+          elevation: 4,
+          centerTitle: true,
         ),
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+        cardTheme: CardThemeData(
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.symmetric(vertical: 6),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: mainColor,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            elevation: 5,
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          prefixIconColor: mainColor,
+          filled: true,
+          fillColor: Colors.white.withOpacity(0.9),
+        ),
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          backgroundColor: Colors.white,
+          selectedItemColor: mainColor,
+          unselectedItemColor: Colors.grey[600],
+          type: BottomNavigationBarType.fixed,
+        ),
       ),
       home: const AuthSystem(),
     );

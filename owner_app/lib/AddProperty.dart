@@ -508,10 +508,10 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
               Center(
                 child: ElevatedButton(
                   onPressed: _registerProperty,
-                  style: ElevatedButton.styleFrom(
+                  /*style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     textStyle: const TextStyle(fontSize: 18),
-                  ),
+                  ),*/
                   child: const Text('物件情報を登録'),
                 ),
               ),
