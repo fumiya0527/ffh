@@ -1,13 +1,12 @@
-
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // ★追加: Firebase Authenticationのインポート
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:ffh/user_regist.dart';
 import 'house_select.dart';
 import 'manner.dart';
 import 'quiz_question.dart';
 
 class LoginChoiceScreen extends StatelessWidget {
-  const LoginChoiceScreen({super.key}); // const constructor
+  const LoginChoiceScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +112,7 @@ class LoginChoiceScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) =>  UserRegistrationScreen()), // constを追加
+                        MaterialPageRoute(builder: (context) =>  UserRegistrationScreen()),
                       );
                     },
                   ),
@@ -150,107 +149,12 @@ class LoginChoiceScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const LoginScreen()), // constを追加
+                        MaterialPageRoute(builder: (context) => const LoginScreen()),
                       );
                     },
                   ),
                 ),
-                const SizedBox(height: 40),
-
-                // 区切り線
-                Row(
-                  children: [
-                    Expanded(child: Divider(color: Colors.grey.shade400)), // 色を調整
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Text(
-                        'または (or)',
-                        style: TextStyle(color: Colors.grey[700]), // 色を調整
-                      ),
-                    ),
-                    Expanded(child: Divider(color: Colors.grey.shade400)), // 色を調整
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // ソーシャルログインボタン
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: Colors.white, // ボタンの背景色
-                      foregroundColor: Colors.black87, // テキストとアイコンの色
-                      side: BorderSide(color: Colors.grey.shade400), // 枠線の色を調整
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      elevation: 3,
-                    ),
-                    onPressed: () {
-                      // TODO: Googleログイン処理
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Googleログインは開発中です (Google login is under development)')),
-                      );
-                    },
-                    icon: Image.network(
-                      'https://www.gstatic.com/images/branding/product/1x/google_glogo_color_20dp.png', // Googleロゴ
-                      height: 24,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.g_mobiledata, size: 24), // エラー時のフォールバック
-                    ),
-                    label: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Continue with Google',
-                          style: TextStyle(fontSize: 14, color: Colors.black87.withOpacity(0.7)),
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'Googleで続ける',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: Colors.white, // ボタンの背景色
-                      foregroundColor: Colors.black87, // テキストとアイコンの色
-                      side: BorderSide(color: Colors.grey.shade400), // 枠線の色を調整
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      elevation: 3,
-                    ),
-                    onPressed: () {
-                      // TODO: Appleログイン処理
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Appleログインは開発中です (Apple login is under development)')),
-                      );
-                    },
-                    icon: const Icon(Icons.apple, size: 24), // Appleロゴ
-                    label: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Continue with Apple',
-                          style: TextStyle(fontSize: 14, color: Colors.black87.withOpacity(0.7)),
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'Appleで続ける',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                // ▼▼▼ ソーシャルログイン関連のUIをここから削除 ▼▼▼
               ],
             ),
           ),
@@ -262,7 +166,7 @@ class LoginChoiceScreen extends StatelessWidget {
 
 // LoginScreen (ログイン画面) - UIを改善
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key}); // const constructor
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -286,8 +190,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ★追加: ログイン処理
-    Future<void> _loginUser() async {
+  Future<void> _loginUser() async {
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
@@ -295,11 +198,10 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       _showMessage('ログインしました！ (Logged in successfully!)');
 
-      // ログイン成功後、QuizScreenへ遷移
       if (mounted) {
-        Navigator.pushAndRemoveUntil( // これまでのスタックをクリアして遷移
+        Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => const HouseSelectScreen()), // ★ここをQuizScreenに変更
+          MaterialPageRoute(builder: (context) => const HouseSelectScreen()),
           (Route<dynamic> route) => false,
         );
       }
@@ -323,10 +225,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // アプリ全体で使うメインの色を定義
-    final Color mainBackgroundColor = const Color(0xFFEFF7F6); // やさしい背景色
-    final Color mainColor = Colors.teal[800]!; // 濃いティール
-    final Color secondaryColor = Colors.teal; // 明るいティール
+    final Color mainBackgroundColor = const Color(0xFFEFF7F6);
+    final Color mainColor = Colors.teal[800]!;
+    final Color secondaryColor = Colors.teal;
 
     return Scaffold(
       appBar: AppBar(
@@ -335,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             Text(
               'Log in',
-              style: TextStyle(fontSize: 14, color: Colors.white70), // 白の薄め
+              style: TextStyle(fontSize: 14, color: Colors.white70),
             ),
             const SizedBox(height: 2),
             const Text(
@@ -344,12 +245,12 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ],
         ),
-        backgroundColor: mainColor, // AppBarの色を統一
-        foregroundColor: Colors.white, // タイトル色
-        centerTitle: false, // タイトルを左寄せに
+        backgroundColor: mainColor,
+        foregroundColor: Colors.white,
+        centerTitle: false,
       ),
       body: Container(
-        color: mainBackgroundColor, // 単色背景に統一
+        color: mainBackgroundColor,
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -360,7 +261,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     Text(
                       'Log in to your account',
-                      style: TextStyle(fontSize: 16, color: secondaryColor), // サブカラー
+                      style: TextStyle(fontSize: 16, color: secondaryColor),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 4),
@@ -369,7 +270,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: mainColor, // メインカラー
+                        color: mainColor,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -377,7 +278,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 40),
 
-                // メール入力
                 TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -387,7 +287,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    prefixIcon: Icon(Icons.email, color: mainColor), // アイコン色もメインカラーに
+                    prefixIcon: Icon(Icons.email, color: mainColor),
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.9),
                   ),
@@ -398,7 +298,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // パスワード入力 + アイコン表示切替
                 TextField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
@@ -408,7 +307,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    prefixIcon: Icon(Icons.lock, color: mainColor), // アイコン色もメインカラーに
+                    prefixIcon: Icon(Icons.lock, color: mainColor),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -430,14 +329,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 15),
 
-                // パスワードを忘れた方ボタン
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const EmailVerificationScreen()), // constを追加
+                        MaterialPageRoute(builder: (context) => const EmailVerificationScreen()),
                       );
                     },
                     child: Column(
@@ -445,12 +343,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         Text(
                           'Forgot password?',
-                          style: TextStyle(fontSize: 12, color: secondaryColor.withOpacity(0.8)), // サブカラー
+                          style: TextStyle(fontSize: 12, color: secondaryColor.withOpacity(0.8)),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'パスワードを忘れた方',
-                          style: TextStyle(fontSize: 14, color: mainColor, fontWeight: FontWeight.bold), // メインカラー
+                          style: TextStyle(fontSize: 14, color: mainColor, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -458,20 +356,19 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // ログインボタン
                 SizedBox(
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: mainColor, // メインカラー
+                      backgroundColor: mainColor,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
                       elevation: 5,
                     ),
-                    onPressed: _loginUser, // ★変更: ログイン処理を_loginUserメソッドに委譲
+                    onPressed: _loginUser,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -502,7 +399,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
 // EmailVerificationScreen (メール認証コード送信画面) - UIを改善
 class EmailVerificationScreen extends StatefulWidget {
-  const EmailVerificationScreen({super.key}); // const constructor
+  const EmailVerificationScreen({super.key});
 
   @override
   State<EmailVerificationScreen> createState() => _EmailVerificationScreenState();
@@ -523,7 +420,6 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     );
   }
 
-  // ★追加: パスワードリセットメール送信
   Future<void> _sendPasswordResetEmail() async {
     final email = _emailController.text.trim();
 
@@ -536,7 +432,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
       _showMessage('パスワードリセットのメールを送信しました。ご確認ください。 (Password reset email sent. Please check your inbox.)');
       if (mounted) {
-        Navigator.pop(context); // 認証コード入力画面には行かずに前の画面に戻る
+        Navigator.pop(context);
       }
     } on FirebaseAuthException catch (e) {
       String message;
@@ -556,10 +452,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // アプリ全体で使うメインの色を定義
-    final Color mainBackgroundColor = const Color(0xFFEFF7F6); // やさしい背景色
-    final Color mainColor = Colors.teal[800]!; // 濃いティール
-    final Color secondaryColor = Colors.teal; // 明るいティール
+    final Color mainBackgroundColor = const Color(0xFFEFF7F6);
+    final Color mainColor = Colors.teal[800]!;
 
     return Scaffold(
       appBar: AppBar(
@@ -582,7 +476,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
         centerTitle: false,
       ),
       body: Container(
-        color: mainBackgroundColor, // 単色背景に統一
+        color: mainBackgroundColor,
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
@@ -635,7 +529,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                     ),
                     elevation: 5,
                   ),
-                  onPressed: _sendPasswordResetEmail, // ★変更: パスワードリセットメール送信
+                  onPressed: _sendPasswordResetEmail,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -665,7 +559,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
 
 class ResetPasswordScreen extends StatefulWidget {
-  const ResetPasswordScreen({super.key}); // const constructor
+  const ResetPasswordScreen({super.key});
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -691,9 +585,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  // Firebaseのパスワードリセットフローでは、通常この画面はメール内のリンクから直接アクセスされるWebページで処理されるため、
-  // アプリ内で直接パスワードを再設定するこのロジックは使われない可能性が高いです。
-  // ここはFirebase Authenticationのパスワードリセットメールのリンク先で処理されるべきです。
   void _handleReset() {
     final newPassword = _newPasswordController.text;
     final confirmPassword = _confirmPasswordController.text;
@@ -703,19 +594,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     } else if (newPassword != confirmPassword) {
       _showMessage('パスワードが一致しません (Passwords do not match)');
     } else {
-      // TODO: Firebaseで新しいパスワードを設定するAPI呼び出し
-      // 通常、これはメールのリンク先のWebページで行われるため、ここには直接書かない
       _showMessage('パスワードを再設定しました (Password reset successful)');
-      Navigator.popUntil(context, (route) => route.isFirst); // ログイン選択画面まで戻る
+      Navigator.popUntil(context, (route) => route.isFirst);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // アプリ全体で使うメインの色を定義
-    final Color mainBackgroundColor = const Color(0xFFEFF7F6); // やさしい背景色
-    final Color mainColor = Colors.teal[800]!; // 濃いティール
-    final Color secondaryColor = Colors.teal; // 明るいティール
+    final Color mainBackgroundColor = const Color(0xFFEFF7F6);
+    final Color mainColor = Colors.teal[800]!;
 
     return Scaffold(
       appBar: AppBar(
@@ -738,7 +625,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         centerTitle: false,
       ),
       body: Container(
-        color: mainBackgroundColor, // 単色背景に統一
+        color: mainBackgroundColor,
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -763,7 +650,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // 新しいパスワード入力欄
                 TextField(
                   controller: _newPasswordController,
                   obscureText: _obscureNewPassword,
@@ -795,7 +681,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 ),
                 const SizedBox(height: 20),
                 
-                // 新しいパスワード（確認）
                 TextField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
