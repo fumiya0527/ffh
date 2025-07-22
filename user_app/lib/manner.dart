@@ -96,12 +96,12 @@ class MannerScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Open Video 1',
+                          'Open Manner Video',
                           style: TextStyle(fontSize: 14, color: Colors.white70),
                         ),
                         const SizedBox(height: 2),
                         const Text(
-                          '動画1を見る',
+                          'マナー動画を見る',
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -130,12 +130,12 @@ class MannerScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Open Video 2',
+                          'Open Materials',
                           style: TextStyle(fontSize: 14, color: Colors.white70),
                         ),
                         const SizedBox(height: 2),
                         const Text(
-                          '動画2を見る',
+                          'ゴミの分別についての資料',
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                       ],
