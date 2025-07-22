@@ -120,11 +120,17 @@ class _MainScreenState extends State<MainScreen> {
   List<Map<String, dynamic>> _matchingProperties = [];
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final List<List<List<String>>> propertyImages = [
-    [['assets/homedate1.jpg', 'assets/homedate1_1.jpg'] ,['PHIgANlo1dljSxOT2ymB']],
-    [['assets/homedate2.jpg', 'assets/homedate2_2.jpg'],[ 'UYhCХEd5qR0tCsG3o2РС']],
-    [['assets/homedate3.jpg', 'assets/homedate3_1.jpg'],[ 'twWytYCGkUhpHnfpvZQf']],
+
+  // ▼▼▼ 1. 元のダミーデータを「写真だけのテンプレート」として用意 ▼▼▼
+  final List<List<String>> _imageTemplates = [
+    ['assets/homedate1.jpg', 'assets/homedate1_1.jpg'],
+    ['assets/homedate2.jpg', 'assets/homedate2_2.jpg'],
+    ['assets/homedate3.jpg', 'assets/homedate3_1.jpg'],
   ];
+
+  // ▼▼▼ 2. 実際に画面に表示するための、IDが紐付いたリストを新しく用意 ▼▼▼
+  List<List<List<String>>> _displayableProperties = [];
+  
   int currentIndex = 0;
   
   @override
@@ -142,6 +148,7 @@ class _MainScreenState extends State<MainScreen> {
     } catch (e) { print('ユーザー希望条件の取得中にエラー: $e'); }
   }
   
+  // ▼▼▼ 3. データ取得後に、IDと写真を組み合わせる処理を追加 ▼▼▼
   Future<void> _filterProperties() async {
     if (_userDesiredConditions == null) return;
     try {
@@ -151,11 +158,31 @@ class _MainScreenState extends State<MainScreen> {
         data['propertyId'] = doc.id;
         return data;
       }).toList();
+
       List<Map<String, dynamic>> tempMatchingProperties = [];
       for (var property in allProperties) {
         if (_checkPropertyMatches(property, _userDesiredConditions!)) { tempMatchingProperties.add(property); }
       }
-      if (mounted) { setState(() => _matchingProperties = tempMatchingProperties); }
+
+      // --- ここからがご希望の処理 ---
+      // 表示用の新しいリストを作成
+      List<List<List<String>>> newDisplayableProperties = [];
+      for (int i = 0; i < tempMatchingProperties.length; i++) {
+        // 画像テンプレートの数を超えたらループさせる
+        final imagePaths = _imageTemplates[i % _imageTemplates.length];
+        // マッチした物件のIDを取得
+        final propertyId = tempMatchingProperties[i]['propertyId'];
+        // [画像パスリスト, [ID]] の形式で新しいリストに追加
+        newDisplayableProperties.add([imagePaths, [propertyId]]);
+      }
+      
+      if (mounted) { 
+        setState(() {
+          _matchingProperties = tempMatchingProperties;
+          _displayableProperties = newDisplayableProperties; // 表示用リストを更新
+          currentIndex = 0;
+        }); 
+      }
     } catch (e) { print('物件のフィルタリング中にエラー: $e'); }
   }
   
@@ -183,57 +210,59 @@ class _MainScreenState extends State<MainScreen> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              Hero(
-                tag: 'imageHero',
-                child: GestureDetector(
-                  onTap: () {
-                    final List<String> currentPropertyImagePaths = propertyImages[currentIndex][0].where((path) => path.endsWith('.jpg')).toList();
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => DetailScreen(
-                      initialImagePath: currentPropertyImagePaths.isNotEmpty ? currentPropertyImagePaths[0] : '',
-                      propertyImages: propertyImages[currentIndex][0] + propertyImages[currentIndex][1],
-                    )));
-                  },
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12.0),
-                    child: AspectRatio(
-                      aspectRatio: 16 / 9,
-                      child: Image.asset(propertyImages[currentIndex][0][0], fit: BoxFit.cover)
+              // ▼▼▼ 4. 表示に新しいリスト(_displayableProperties)を使うように変更 ▼▼▼
+              if (_displayableProperties.isNotEmpty) ...[
+                Hero(
+                  tag: 'imageHero',
+                  child: GestureDetector(
+                    onTap: () {
+                      final propertyToShow = _displayableProperties[currentIndex];
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => DetailScreen(
+                        propertyData: propertyToShow, // [画像リスト, [ID]] をそのまま渡す
+                      )));
+                    },
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12.0),
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: Image.asset(
+                          _displayableProperties[currentIndex][0][0], // 最初の画像を表示
+                          fit: BoxFit.cover,
+                        )
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildNavButton(Icons.arrow_back, '前の物件へ', () => setState(() => currentIndex = (currentIndex + propertyImages.length - 1) % propertyImages.length)),
-                  _buildNavButton(Icons.arrow_forward, '次の物件へ', () => setState(() => currentIndex = (currentIndex + 1) % propertyImages.length)),
-                ],
-              ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildNavButton(Icons.arrow_back, '前の物件へ', () => setState(() => currentIndex = (currentIndex + _displayableProperties.length - 1) % _displayableProperties.length)),
+                    _buildNavButton(Icons.arrow_forward, '次の物件へ', () => setState(() => currentIndex = (currentIndex + 1) % _displayableProperties.length)),
+                  ],
+                ),
+              ] else ...[
+                const SizedBox(height: 100, child: Center(child: Text('条件に合う物件の写真はありません。')))
+              ],
+
               const Divider(height: 40),
               Text('あなたに合致する物件', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: mainColor)),
               const SizedBox(height: 8),
               _matchingProperties.isEmpty
-                  ? const Center(child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 32.0),
-                      child: Text('該当する物件はありません。'),
-                    ))
+                  ? const Center(child: Padding(padding: EdgeInsets.symmetric(vertical: 32.0), child: Text('該当する物件はありません。')))
                   : ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: _matchingProperties.length,
                       itemBuilder: (context, index) {
                         final propertyData = _matchingProperties[index];
-  
-  // 変数にしておくと分かりやすい
-                      final String propertyName = propertyData['propertyName'] ?? '名称不明';
+                        final String propertyName = propertyData['propertyName'] ?? '名称不明';
                         final String propertyId = propertyData['propertyId'];
                         return Card(
                           child: ListTile(
                             leading: Icon(Icons.home_work_outlined, color: mainColor),
-                            //title: Text(_matchingProperties[index]['propertyName'] ?? '名称不明'),
                             title: Text('$propertyName (ID: $propertyId)'),
-                            subtitle: Text('${_matchingProperties[index]['city'] ?? ''} ${_matchingProperties[index]['rent']?.toString() ?? ''}円'),
+                            subtitle: Text('${propertyData['city'] ?? ''} ${propertyData['rent']?.toString() ?? ''}円'),
                           ),
                         );
                       },
@@ -246,6 +275,11 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _buildNavButton(IconData icon, String label, VoidCallback onPressed) {
+    return SizedBox(height: 55, child: ElevatedButton.icon(icon: Icon(icon), label: Text(label), onPressed: onPressed));
+  }
+}
+
+  Widget _buildNavButton(IconData icon, String label, VoidCallback onPressed) {
     return SizedBox(
       height: 55,
       child: ElevatedButton.icon(
@@ -255,30 +289,35 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
-}
 
 class DetailScreen extends StatefulWidget {
-  final String initialImagePath;
-  final List<String> propertyImages;
-  const DetailScreen({super.key, required this.initialImagePath, required this.propertyImages});
+  final List<List<String>> propertyData; 
+
+  const DetailScreen({
+    super.key,
+    required this.propertyData,
+  });
+
   @override
   State<DetailScreen> createState() => _DetailScreenState();
 }
 
 class _DetailScreenState extends State<DetailScreen> {
   late int _currentImageIndex;
-  late List<String> _validImagePaths;
+  late List<String> _imagePaths;
   late String _propertyId;
+
   @override
   void initState() {
     super.initState();
-    _validImagePaths = widget.propertyImages.where((path) => path.endsWith('.jpg')).toList();
-    _propertyId = widget.propertyImages.isNotEmpty ? widget.propertyImages.last : 'no_id';
-    _currentImageIndex = _validImagePaths.indexOf(widget.initialImagePath);
-    if (_currentImageIndex == -1) _currentImageIndex = 0;
+    _currentImageIndex = 0;
+    _imagePaths = widget.propertyData[0];
+    _propertyId = widget.propertyData[1].isNotEmpty ? widget.propertyData[1][0] : 'no_id';
   }
-  void _goToPreviousImage() => setState(() => _currentImageIndex = (_currentImageIndex - 1 + _validImagePaths.length) % _validImagePaths.length);
-  void _goToNextImage() => setState(() => _currentImageIndex = (_currentImageIndex + 1) % _validImagePaths.length);
+
+  void _goToPreviousImage() => setState(() => _currentImageIndex = (_currentImageIndex - 1 + _imagePaths.length) % _imagePaths.length);
+  void _goToNextImage() => setState(() => _currentImageIndex = (_currentImageIndex + 1) % _imagePaths.length);
+
   Future<void> _sendInterestToFirebase(BuildContext context) async {
     User? currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) return;
@@ -289,6 +328,7 @@ class _DetailScreenState extends State<DetailScreen> {
       if (mounted) Navigator.pop(context);
     } catch (e) { print('興味ありの送信に失敗: $e'); }
   }
+  
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -299,16 +339,89 @@ class _DetailScreenState extends State<DetailScreen> {
                   Hero(tag: 'imageHero', child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: SizedBox(width: screenWidth * 0.9, child: AspectRatio(aspectRatio: 16 / 9,
-                          child: _validImagePaths.isNotEmpty ? Image.asset(_validImagePaths[_currentImageIndex], fit: BoxFit.cover) : const Center(child: Text('表示できる画像がありません。')),),),
+                          child: _imagePaths.isNotEmpty 
+                              ? Image.asset(_imagePaths[_currentImageIndex], fit: BoxFit.cover) 
+                              : const Center(child: Text('表示できる画像がありません。')),
+                    ),),
                   ),),
-                  if (_validImagePaths.length > 1) Positioned(left: 10, child: IconButton(onPressed: _goToPreviousImage, icon: const Icon(Icons.arrow_back_ios, size: 40, color: Colors.white70,),),),
-                  if (_validImagePaths.length > 1) Positioned(right: 10, child: IconButton(onPressed: _goToNextImage, icon: const Icon(Icons.arrow_forward_ios, size: 40, color: Colors.white70,),),),
+                  if (_imagePaths.length > 1) Positioned(left: 10, child: IconButton(onPressed: _goToPreviousImage, icon: const Icon(Icons.arrow_back_ios, size: 40, color: Colors.white70,),),),
+                  if (_imagePaths.length > 1) Positioned(right: 10, child: IconButton(onPressed: _goToNextImage, icon: const Icon(Icons.arrow_forward_ios, size: 40, color: Colors.white70,),),),
                 ],),
               const SizedBox(height: 20),
-              Text(_validImagePaths.isNotEmpty ? '${_currentImageIndex + 1} / ${_validImagePaths.length}' : '画像なし', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),),
+              Text(_imagePaths.isNotEmpty ? '${_currentImageIndex + 1} / ${_imagePaths.length}' : '画像なし', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),),
               const SizedBox(height: 20),
-              Text('物件ID: $_propertyId', style: const TextStyle(fontSize: 14, color: Colors.grey),),
-              const Padding(padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0), child: Text('この物件は、広々としたリビングと日当たりの良いバルコニーが特徴です。静かな住宅街に位置し、近くには公園やショッピング施設があります。詳細は後ほど担当者からご連絡いたします。', textAlign: TextAlign.center, style: TextStyle(fontSize: 16),),),
+              
+                FutureBuilder<DocumentSnapshot>(
+                  future: FirebaseFirestore.instance.collection('properties').doc(_propertyId).get(),
+                  builder: (context, snapshot) {
+                    // データ取得中の表示
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 10.0),
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+                    // エラーまたはデータがない場合の表示
+                    if (!snapshot.hasData || !snapshot.data!.exists) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 10.0),
+                        child: Text('物件情報が見つかりません'),
+                      );
+                    }
+
+                    // 取得したデータから必要な情報を取り出す
+                    final data = snapshot.data!.data() as Map<String, dynamic>;
+                    final propertyName = data['propertyName'] ?? '名称不明';
+                    final rent = data['rent'] as int? ?? 0;
+                    final city = data['city'] ?? '';
+                    final town = data['town'] ?? '';
+                    final floorPlan = data['floorPlan'] ?? '情報なし';
+                    final buildingAge = data['buildingAge'] ?? '情報なし';
+                    final distanceToStation = data['distanceToStation'] ?? '情報なし';
+                    // amenitiesはリストなので、取得方法が少し異なります
+                    final amenities = (data['amenities'] as List<dynamic>?)?.join(', ') ?? '情報なし';
+                    
+                    // 家賃を読みやすいようにフォーマット
+                    final currencyFormatter = NumberFormat('#,###');
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                      // Columnを使って、情報を縦に並べる
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start, // 左寄せにする
+                        children: [
+                          // 物件名
+                          Center(
+                            child: Text(
+                              propertyName,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          // 各詳細情報
+                          Text('家賃: ${currencyFormatter.format(rent)}円', style: const TextStyle(fontSize: 18)),
+                          const SizedBox(height: 8),
+                          Text('エリア: $city$town', style: const TextStyle(fontSize: 18)), // cityとtownを連結
+                          const SizedBox(height: 8),
+                          Text('間取り: $floorPlan', style: const TextStyle(fontSize: 18)),
+                          const SizedBox(height: 8),
+                          Text('築年数: $buildingAge', style: const TextStyle(fontSize: 18)),
+                          const SizedBox(height: 8),
+                          Text('駅からの距離: $distanceToStation', style: const TextStyle(fontSize: 18)),
+                          const SizedBox(height: 16),
+                          const Text('設備:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          Text(amenities, style: const TextStyle(fontSize: 16)),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+// ▲▲▲ ここまで差し替え ▲▲▲
+
+              Text('物件ID: $_propertyId', style: const TextStyle(fontSize: 14, color: Colors.grey)),
+              // ▲▲▲ ここまで修正 ▲▲▲
+
               const SizedBox(height: 30),
               SizedBox(
                 height: 55,
