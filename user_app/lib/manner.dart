@@ -200,14 +200,14 @@ class _QuizScreenState extends State<QuizScreen> {
   // --- クイズデータ ---
   final List<QuizQuestion> _questions = [
     QuizQuestion(
-      questionText: 'Q1: 夜中にしてはいけないことは？ (What should you not do late at night?)',
-      options: ['A) 料理 (Cooking)', 'B) 掃除機 (Vacuuming)', 'C) ゲーム (Playing games)'],
-      correctAnswer: 'B) 掃除機 (Vacuuming)',
+      questionText: 'Q1: 22時に家でしていいことはどれ？ (What is ok to do at home at 10pm?)',
+      options: ['A) 掃除機 (Vacuuming)', 'B) パーティー (Party)', 'C) ゲーム (Playing games)'],
+      correctAnswer: 'C) ゲーム (Playing games) ',
     ),
     QuizQuestion(
-      questionText: 'Q2: ペットを許可なく飼っていいか？ (Is it okay to keep pets without permission?)',
-      options: ['A) 飼ってはダメ (No, you cannot)', 'B) 飼っていい (Yes, you can)'],
-      correctAnswer: 'A) 飼ってはダメ (No, you cannot)',
+      questionText: 'Q2: 生ごみとまとめた新聞紙を一緒に出して良いか？ (Can I put out food waste and bundled newspapers together?)',
+      options: ['A) 出してはダメ (No, you cannot)', 'B) 出していい (Yes, you can)'],
+      correctAnswer: 'A) 出してはダメ (No, you cannot)',
     ),
     QuizQuestion(
       questionText: 'Q3: 共有スペースは物を置いたり自由に使っていい？ (Is it okay to put things in common spaces or use them freely?)',
@@ -215,14 +215,14 @@ class _QuizScreenState extends State<QuizScreen> {
       correctAnswer: 'B) 間違っている (Incorrect)',
     ),
     QuizQuestion(
-      questionText: 'Q4: 部屋の中でしてはいけないことは？ (What should you not do inside your room?)',
-      options: ['A) 読書 (Reading)', 'B) ゲーム (Playing games)', 'C) 楽器演奏 (Playing musical instruments)'],
-      correctAnswer: 'C) 楽器演奏 (Playing musical instruments)',
+      questionText: 'Q4: １人で住む部屋を借りた後してもいいことは？ (What you can do after renting a room to live alone?)',
+      options: ['A) 友達を１日泊める (Host a friend for a night)', 'B) 家族を後から呼んで住む (I invited my family over later and we lived together.)', 'C) 友達と一緒に住む (Living with friends)'],
+      correctAnswer: 'A) 友達を１日泊める (Host a friend for a night)',
     ),
     QuizQuestion(
-      questionText: 'Q5: 自転車、バイク、車はいつでも持ってもいい？ (Is it okay to own a bicycle, motorcycle, or car at any time?)',
-      options: ['A) 良い (Yes)', 'B) 届け出が必要 (Notification is required)'],
-      correctAnswer: 'B) 届け出が必要 (Notification is required)',
+      questionText: 'Q5: 壁に穴が開いた時の正しい対応は？ (What to do when there is a hole in the wall?)',
+      options: ['A)大家に連絡する (Contact the landlord)', 'B) 自分で直す (Fix it yourself)'],
+      correctAnswer: 'A)大家に連絡する (Contact the landlord)',
     ),
   ];
 
