@@ -223,10 +223,16 @@ class _MainScreenState extends State<MainScreen> {
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: _matchingProperties.length,
                       itemBuilder: (context, index) {
+                        final propertyData = _matchingProperties[index];
+  
+  // 変数にしておくと分かりやすい
+                      final String propertyName = propertyData['propertyName'] ?? '名称不明';
+                        final String propertyId = propertyData['propertyId'];
                         return Card(
                           child: ListTile(
                             leading: Icon(Icons.home_work_outlined, color: mainColor),
-                            title: Text(_matchingProperties[index]['propertyName'] ?? '名称不明'),
+                            //title: Text(_matchingProperties[index]['propertyName'] ?? '名称不明'),
+                            title: Text('$propertyName (ID: $propertyId)'),
                             subtitle: Text('${_matchingProperties[index]['city'] ?? ''} ${_matchingProperties[index]['rent']?.toString() ?? ''}円'),
                           ),
                         );
