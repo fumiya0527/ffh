@@ -189,15 +189,46 @@ class _MainScreenState extends State<MainScreen> {
   }
   
   bool _checkPropertyMatches(Map<String, dynamic> property, Map<String, dynamic> desired) {
-    int propertyRent = property['rent'] as int? ?? 0;
-    int desiredRentMin = desired['rentRangeMin'] as int? ?? 0;
-    int desiredRentMax = desired['rentRangeMax'] as int? ?? 200000;
-    if (propertyRent < desiredRentMin || propertyRent > desiredRentMax) return false;
-    String propertyCity = property['city'] as String? ?? '';
-    String desiredCity = desired['city'] as String? ?? '';
-    if (desiredCity.isNotEmpty && propertyCity != desiredCity) return false;
-    return true;
+  // ---【オリジナル】家賃のチェック ---
+  int propertyRent = property['rent'] as int? ?? 0;
+  int desiredRentMin = desired['rentRangeMin'] as int? ?? 0;
+  int desiredRentMax = desired['rentRangeMax'] as int? ?? 200000;
+  if (propertyRent < desiredRentMin || propertyRent > desiredRentMax) {
+    return false;
   }
+
+  // ---【オリジナル】市区町村のチェック ---
+  String propertyCity = property['city'] as String? ?? '';
+  String desiredCity = desired['city'] as String? ?? '';
+  if (desiredCity.isNotEmpty && propertyCity != desiredCity) {
+    return false;
+  }
+
+  // ---【改善版】駅からの距離のチェック ---
+  final String? propertyDistance = property['distanceToStation'] as String?;
+  final String? desiredDistance = desired['distanceToStation'] as String?;
+  if (desiredDistance != null && desiredDistance.isNotEmpty) {
+    if (desiredDistance == '20分以上') {
+      if (propertyDistance != '20分以上') return false;
+    } else {
+      final int propertyRank = _getRankForDistance(propertyDistance);
+      final int desiredRank = _getRankForDistance(desiredDistance);
+      if (propertyRank > desiredRank) return false;
+    }
+  }
+
+  // ---【改善版】築年数のチェック ---
+  final String? propertyAge = property['buildingAge'] as String?;
+  final String? desiredAge = desired['buildingAge'] as String?;
+  if (desiredAge != null && desiredAge.isNotEmpty) {
+    final int propertyAgeRank = _getRankForBuildingAge(propertyAge);
+    final int desiredAgeRank = _getRankForBuildingAge(desiredAge);
+    if (propertyAgeRank > desiredAgeRank) return false;
+  }
+
+  // ここまでの条件を全てクリアした物件だけが true を返す
+  return true;
+}
   
   Future<void> _loadUserAndProperties() async {
     await _fetchUserDesiredConditions();
@@ -302,6 +333,17 @@ class _MainScreenState extends State<MainScreen> {
     '20分以上': 20,
   };
   return distanceRank[distance] ?? 999; // マップにない場合も不利なランクに
+}
+
+int _getRankForBuildingAge(String? age) {
+  if (age == null) return 999;
+  const ageRank = {
+    '5年以内': 5,
+    '10年以内': 10,
+    '20年以内': 20,
+    '20年以上': 99,
+  };
+  return ageRank[age] ?? 999;
 }
 
 class DetailScreen extends StatefulWidget {
