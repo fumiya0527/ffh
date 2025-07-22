@@ -375,22 +375,19 @@ class _DetailScreenState extends State<DetailScreen> {
                     final rent = data['rent'] as int? ?? 0;
                     final city = data['city'] ?? '';
                     final town = data['town'] ?? '';
+                    final streetAddress = data['streetAddress'] ?? ''; // ★streetAddressを追加
                     final floorPlan = data['floorPlan'] ?? '情報なし';
                     final buildingAge = data['buildingAge'] ?? '情報なし';
                     final distanceToStation = data['distanceToStation'] ?? '情報なし';
-                    // amenitiesはリストなので、取得方法が少し異なります
                     final amenities = (data['amenities'] as List<dynamic>?)?.join(', ') ?? '情報なし';
                     
-                    // 家賃を読みやすいようにフォーマット
                     final currencyFormatter = NumberFormat('#,###');
 
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-                      // Columnを使って、情報を縦に並べる
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start, // 左寄せにする
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 物件名
                           Center(
                             child: Text(
                               propertyName,
@@ -399,10 +396,10 @@ class _DetailScreenState extends State<DetailScreen> {
                             ),
                           ),
                           const SizedBox(height: 24),
-                          // 各詳細情報
                           Text('家賃: ${currencyFormatter.format(rent)}円', style: const TextStyle(fontSize: 18)),
                           const SizedBox(height: 8),
-                          Text('エリア: $city$town', style: const TextStyle(fontSize: 18)), // cityとtownを連結
+                          // ★city, town, streetAddress を連結して表示
+                          Text('住所: $city$town$streetAddress', style: const TextStyle(fontSize: 18)),
                           const SizedBox(height: 8),
                           Text('間取り: $floorPlan', style: const TextStyle(fontSize: 18)),
                           const SizedBox(height: 8),
