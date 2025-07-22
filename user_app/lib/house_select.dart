@@ -91,12 +91,13 @@ class _AppRootScreenState extends State<AppRootScreen> {
           ),
         ],
       ),
+      
       body: _widgetOptions.elementAt(_selectedIndex),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: '物件を見る'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'あなたの状況'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: '設定'),
+          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'マナー資料'),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: mainColor,
@@ -121,16 +122,20 @@ class _MainScreenState extends State<MainScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-
-  // ▼▼▼ 1. 元のダミーデータを「写真だけのテンプレート」として用意 ▼▼▼
   final List<List<String>> _imageTemplates = [
     ['assets/homedate1.jpg', 'assets/homedate1_1.jpg'],
     ['assets/homedate2.jpg', 'assets/homedate2_2.jpg'],
     ['assets/homedate3.jpg', 'assets/homedate3_1.jpg'],
+    ['assets/homedate4.jpg', 'assets/homedate4_1.jpg'],
+    ['assets/homedate5.jpg', 'assets/homedate5_1.jpg'],
+    ['assets/homedate6.jpg', 'assets/homedate6_1.jpg'],
+    ['assets/homedate7.jpg', 'assets/homedate7_1.jpg'],
+    ['assets/homedate8.jpg', 'assets/homedate8_1.jpg'],
+    ['assets/homedate9.jpg', 'assets/homedate9_1.jpg'],
+    ['assets/homedate10.jpg', 'assets/homedate10_1.jpg'],
 
   ];
 
-  // ▼▼▼ 2. 実際に画面に表示するための、IDが紐付いたリストを新しく用意 ▼▼▼
   List<List<List<String>>> _displayableProperties = [];
   
   int currentIndex = 0;
@@ -150,7 +155,6 @@ class _MainScreenState extends State<MainScreen> {
     } catch (e) { print('ユーザー希望条件の取得中にエラー: $e'); }
   }
   
-  // ▼▼▼ 3. データ取得後に、IDと写真を組み合わせる処理を追加 ▼▼▼
   Future<void> _filterProperties() async {
     if (_userDesiredConditions == null) return;
     try {
@@ -166,69 +170,36 @@ class _MainScreenState extends State<MainScreen> {
         if (_checkPropertyMatches(property, _userDesiredConditions!)) { tempMatchingProperties.add(property); }
       }
 
-      // --- ここからがご希望の処理 ---
-      // 表示用の新しいリストを作成
       List<List<List<String>>> newDisplayableProperties = [];
       for (int i = 0; i < tempMatchingProperties.length; i++) {
-        // 画像テンプレートの数を超えたらループさせる
         final imagePaths = _imageTemplates[i % _imageTemplates.length];
-        // マッチした物件のIDを取得
         final propertyId = tempMatchingProperties[i]['propertyId'];
-        // [画像パスリスト, [ID]] の形式で新しいリストに追加
         newDisplayableProperties.add([imagePaths, [propertyId]]);
       }
       
       if (mounted) { 
         setState(() {
           _matchingProperties = tempMatchingProperties;
-          _displayableProperties = newDisplayableProperties; // 表示用リストを更新
+          _displayableProperties = newDisplayableProperties;
           currentIndex = 0;
         }); 
       }
     } catch (e) { print('物件のフィルタリング中にエラー: $e'); }
   }
+
+
+
   
   bool _checkPropertyMatches(Map<String, dynamic> property, Map<String, dynamic> desired) {
-  // ---【オリジナル】家賃のチェック ---
-  int propertyRent = property['rent'] as int? ?? 0;
-  int desiredRentMin = desired['rentRangeMin'] as int? ?? 0;
-  int desiredRentMax = desired['rentRangeMax'] as int? ?? 200000;
-  if (propertyRent < desiredRentMin || propertyRent > desiredRentMax) {
-    return false;
+    int propertyRent = property['rent'] as int? ?? 0;
+    int desiredRentMin = desired['rentRangeMin'] as int? ?? 0;
+    int desiredRentMax = desired['rentRangeMax'] as int? ?? 200000;
+    if (propertyRent < desiredRentMin || propertyRent > desiredRentMax) return false;
+    String propertyCity = property['city'] as String? ?? '';
+    String desiredCity = desired['city'] as String? ?? '';
+    if (desiredCity.isNotEmpty && propertyCity != desiredCity) return false;
+    return true;
   }
-
-  // ---【オリジナル】市区町村のチェック ---
-  String propertyCity = property['city'] as String? ?? '';
-  String desiredCity = desired['city'] as String? ?? '';
-  if (desiredCity.isNotEmpty && propertyCity != desiredCity) {
-    return false;
-  }
-
-  // ---【改善版】駅からの距離のチェック ---
-  final String? propertyDistance = property['distanceToStation'] as String?;
-  final String? desiredDistance = desired['distanceToStation'] as String?;
-  if (desiredDistance != null && desiredDistance.isNotEmpty) {
-    if (desiredDistance == '20分以上') {
-      if (propertyDistance != '20分以上') return false;
-    } else {
-      final int propertyRank = _getRankForDistance(propertyDistance);
-      final int desiredRank = _getRankForDistance(desiredDistance);
-      if (propertyRank > desiredRank) return false;
-    }
-  }
-
-  // ---【改善版】築年数のチェック ---
-  final String? propertyAge = property['buildingAge'] as String?;
-  final String? desiredAge = desired['buildingAge'] as String?;
-  if (desiredAge != null && desiredAge.isNotEmpty) {
-    final int propertyAgeRank = _getRankForBuildingAge(propertyAge);
-    final int desiredAgeRank = _getRankForBuildingAge(desiredAge);
-    if (propertyAgeRank > desiredAgeRank) return false;
-  }
-
-  // ここまでの条件を全てクリアした物件だけが true を返す
-  return true;
-}
   
   Future<void> _loadUserAndProperties() async {
     await _fetchUserDesiredConditions();
@@ -243,7 +214,6 @@ class _MainScreenState extends State<MainScreen> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              // ▼▼▼ 4. 表示に新しいリスト(_displayableProperties)を使うように変更 ▼▼▼
               if (_displayableProperties.isNotEmpty) ...[
                 Hero(
                   tag: 'imageHero',
@@ -251,7 +221,7 @@ class _MainScreenState extends State<MainScreen> {
                     onTap: () {
                       final propertyToShow = _displayableProperties[currentIndex];
                       Navigator.push(context, MaterialPageRoute(builder: (context) => DetailScreen(
-                        propertyData: propertyToShow, // [画像リスト, [ID]] をそのまま渡す
+                        propertyData: propertyToShow,
                       )));
                     },
                     child: ClipRRect(
@@ -259,14 +229,29 @@ class _MainScreenState extends State<MainScreen> {
                       child: AspectRatio(
                         aspectRatio: 16 / 9,
                         child: Image.asset(
-                          _displayableProperties[currentIndex][0][0], // 最初の画像を表示
+                          _displayableProperties[currentIndex][0][0], // 正しくcurrentIndexの物件の画像を参照する
+                          key: ValueKey(_displayableProperties[currentIndex][0][0]),     // ★キーを追加して、画像が確実に更新されるようにする
                           fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
                         )
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+
+                // ▼▼▼ ここに追加 ▼▼▼
+                const SizedBox(height: 16),
+                Text(
+                  _matchingProperties[currentIndex]['propertyName'] ?? '名称不明',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                // ▲▲▲ ここまで追加 ▲▲▲
+                
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
@@ -678,12 +663,86 @@ class _UserInterestStatusScreenState extends State<UserInterestStatusScreen> {
     );
   }
 }
-
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
+  // URLを開くための補助関数
+  Future<void> _launchURL(BuildContext context, String urlString) async {
+    final Uri url = Uri.parse(urlString);
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('このリンクを開けませんでした: $urlString')),
+        );
+      }
+    }
+  }
+
+  // ポップなカードを作成するための補助ウィジェット
+  Widget _buildOptionCard({
+    required BuildContext context,
+    required IconData icon,
+    required Color iconColor,
+    required String topText,
+    required String bottomText,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(topText, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+              const SizedBox(height: 16),
+              Icon(icon, size: 50, color: iconColor),
+              const SizedBox(height: 16),
+              Text(bottomText, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('設定画面です'));
+    // 動画とPDFのURL
+    const videoUrl = 'https://drive.google.com/file/d/1vrkutI5mjecmqeejPJbvVw87RvvRVykt/view?usp=drive_link';
+    const pdfUrl = 'https://drive.google.com/file/d/15CMXu2UYdGq6o0hKyNEGTc58JVZ5Uo2F/view?usp=drive_link';
+
+    return Scaffold(
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildOptionCard(
+              context: context,
+              icon: Icons.play_circle_fill_rounded,
+              iconColor: Colors.red.shade400,
+              topText: '動画でマナーを学ぶ',
+              bottomText: 'マナー動画',
+              onTap: () => _launchURL(context, videoUrl),
+            ),
+            const SizedBox(height: 24),
+            _buildOptionCard(
+              context: context,
+              icon: Icons.picture_as_pdf_rounded,
+              iconColor: Colors.green.shade600,
+              topText: '資料でマナーを読む',
+              bottomText: '資料PDF',
+              onTap: () => _launchURL(context, pdfUrl),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
