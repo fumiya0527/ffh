@@ -1,44 +1,39 @@
 {
-    "hosting": {
-      "target": "user-site",
-      "public": "build/web",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
-      "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html"
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "ffh-firebase",
+          "appId": "1:126192657081:android:6d601cbac38ac54052b168",
+          "fileOutput": "android/app/google-services.json"
         }
-      ]
-    },
-    "flutter": {
-      "platforms": {
-        "android": {
-          "default": {
-            "projectId": "ffh-firebase",
-            "appId": "1:126192657081:android:6d601cbac38ac54052b168",
-            "fileOutput": "android/app/google-services.json"
-          }
-        },
-        "dart": {
-          "lib/firebase_options.dart": {
-            "projectId": "ffh-firebase",
-            "configurations": {
-              "android": "1:126192657081:android:6d601cbac38ac54052b168",
-              "ios": "1:126192657081:ios:2a35083f608a928952b168",
-              "macos": "1:126192657081:ios:2a35083f608a928952b168",
-              "web": "1:126192657081:web:1b69d6d098cd98a852b168",
-              "windows": "1:126192657081:web:1f679a63b947483752b168"
-            }
-
-
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "ffh-firebase",
+          "configurations": {
+            "android": "1:126192657081:android:6d601cbac38ac54052b168",
+            "ios": "1:126192657081:ios:2a35083f608a928952b168",
+            "macos": "1:126192657081:ios:2a35083f608a928952b168",
+            "web": "1:126192657081:web:1b69d6d098cd98a852b168",
+            "windows": "1:126192657081:web:1f679a63b947483752b168"
           }
         }
       }
     }
+  }
 }
-
-

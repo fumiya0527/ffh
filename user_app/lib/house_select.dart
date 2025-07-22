@@ -14,7 +14,6 @@ class HouseSelectScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // main.dartのテーマを引き継ぐため、MaterialAppは削除
     return const AppRootScreen();
   }
 }
@@ -100,7 +99,7 @@ class _AppRootScreenState extends State<AppRootScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: '設定'),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: mainColor,/*Theme.of(context).primaryColor,*/
+        selectedItemColor: mainColor,
         unselectedItemColor: Colors.grey[600],
         backgroundColor: Colors.white,
         type: BottomNavigationBarType.fixed,
@@ -176,77 +175,75 @@ class _MainScreenState extends State<MainScreen> {
     if (_userDesiredConditions != null) { await _filterProperties(); }
   }
   
-@override
-Widget build(BuildContext context) {
-  // Scaffoldでページ全体の土台を作る
-  return Scaffold(
-    // body全体をSingleChildScrollViewで囲むことで、縦スクロールを可能にする
-    body: SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Hero(
-              tag: 'imageHero',
-              child: GestureDetector(
-                onTap: () {
-                  final List<String> currentPropertyImagePaths = propertyImages[currentIndex][0].where((path) => path.endsWith('.jpg')).toList();
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => DetailScreen(
-                    initialImagePath: currentPropertyImagePaths.isNotEmpty ? currentPropertyImagePaths[0] : '',
-                    propertyImages: propertyImages[currentIndex][0] + propertyImages[currentIndex][1],
-                  )));
-                },
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12.0),
-                  child: AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Image.asset(propertyImages[currentIndex][0][0], fit: BoxFit.cover)
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Hero(
+                tag: 'imageHero',
+                child: GestureDetector(
+                  onTap: () {
+                    final List<String> currentPropertyImagePaths = propertyImages[currentIndex][0].where((path) => path.endsWith('.jpg')).toList();
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => DetailScreen(
+                      initialImagePath: currentPropertyImagePaths.isNotEmpty ? currentPropertyImagePaths[0] : '',
+                      propertyImages: propertyImages[currentIndex][0] + propertyImages[currentIndex][1],
+                    )));
+                  },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12.0),
+                    child: AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: Image.asset(propertyImages[currentIndex][0][0], fit: BoxFit.cover)
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavButton(Icons.arrow_back, '前の物件へ', () => setState(() => currentIndex = (currentIndex + propertyImages.length - 1) % propertyImages.length)),
-                _buildNavButton(Icons.arrow_forward, '次の物件へ', () => setState(() => currentIndex = (currentIndex + 1) % propertyImages.length)),
-              ],
-            ),
-            const Divider(height: 40),
-            Text('あなたに合致する物件', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: mainColor)),
-            const SizedBox(height: 8),
-
-            // ▼▼▼ ここを修正 ▼▼▼
-            // Expandedを削除し、ListView.builderに設定を追加
-            _matchingProperties.isEmpty
-                ? const Center(child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 32.0),
-                    child: Text('該当する物件はありません。'),
-                  ))
-                : ListView.builder(
-                    // この2行を追加
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-
-                    itemCount: _matchingProperties.length,
-                    itemBuilder: (context, index) {
-                      return Card(
-                        child: ListTile(
-                          leading: Icon(Icons.home_work_outlined, color: mainColor),
-                          title: Text(_matchingProperties[index]['propertyName'] ?? '名称不明'),
-                          subtitle: Text('${_matchingProperties[index]['city'] ?? ''} ${_matchingProperties[index]['rent']?.toString() ?? ''}円'),
-                        ),
-                      );
-                    },
-                  ),
-            // ▲▲▲ ここまで修正 ▲▲▲
-          ],
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildNavButton(Icons.arrow_back, '前の物件へ', () => setState(() => currentIndex = (currentIndex + propertyImages.length - 1) % propertyImages.length)),
+                  _buildNavButton(Icons.arrow_forward, '次の物件へ', () => setState(() => currentIndex = (currentIndex + 1) % propertyImages.length)),
+                ],
+              ),
+              const Divider(height: 40),
+              Text('あなたに合致する物件', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: mainColor)),
+              const SizedBox(height: 8),
+              _matchingProperties.isEmpty
+                  ? const Center(child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 32.0),
+                      child: Text('該当する物件はありません。'),
+                    ))
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _matchingProperties.length,
+                      itemBuilder: (context, index) {
+                        final propertyData = _matchingProperties[index];
+  
+  // 変数にしておくと分かりやすい
+                      final String propertyName = propertyData['propertyName'] ?? '名称不明';
+                        final String propertyId = propertyData['propertyId'];
+                        return Card(
+                          child: ListTile(
+                            leading: Icon(Icons.home_work_outlined, color: mainColor),
+                            //title: Text(_matchingProperties[index]['propertyName'] ?? '名称不明'),
+                            title: Text('$propertyName (ID: $propertyId)'),
+                            subtitle: Text('${_matchingProperties[index]['city'] ?? ''} ${_matchingProperties[index]['rent']?.toString() ?? ''}円'),
+                          ),
+                        );
+                      },
+                    ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildNavButton(IconData icon, String label, VoidCallback onPressed) {
     return SizedBox(
@@ -255,12 +252,6 @@ Widget build(BuildContext context) {
         icon: Icon(icon),
         label: Text(label),
         onPressed: onPressed,
-        /*style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).primaryColor,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-          elevation: 5,
-        ),*/
       ),
     );
   }
@@ -298,46 +289,38 @@ class _DetailScreenState extends State<DetailScreen> {
       if (mounted) Navigator.pop(context);
     } catch (e) { print('興味ありの送信に失敗: $e'); }
   }
- @override
- Widget build(BuildContext context) {
-   final screenWidth = MediaQuery.of(context).size.width;
-   return Scaffold(
-     appBar: AppBar(title: const Text('物件詳細')),
-     body: Center(child: SingleChildScrollView(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-             Stack(alignment: Alignment.center, children: [
-                 Hero(tag: 'imageHero', child: ClipRRect(
-                   borderRadius: BorderRadius.circular(12),
-                   child: SizedBox(width: screenWidth * 0.9, child: AspectRatio(aspectRatio: 16 / 9,
-                         child: _validImagePaths.isNotEmpty ? Image.asset(_validImagePaths[_currentImageIndex], fit: BoxFit.cover) : const Center(child: Text('表示できる画像がありません。')),),),
-                 ),),
-                 if (_validImagePaths.length > 1) Positioned(left: 10, child: IconButton(onPressed: _goToPreviousImage, icon: const Icon(Icons.arrow_back_ios, size: 40, color: Colors.white70,),),),
-                 if (_validImagePaths.length > 1) Positioned(right: 10, child: IconButton(onPressed: _goToNextImage, icon: const Icon(Icons.arrow_forward_ios, size: 40, color: Colors.white70,),),),
-               ],),
-             const SizedBox(height: 20),
-             Text(_validImagePaths.isNotEmpty ? '${_currentImageIndex + 1} / ${_validImagePaths.length}' : '画像なし', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),),
-             const SizedBox(height: 20),
-             Text('物件ID: $_propertyId', style: const TextStyle(fontSize: 14, color: Colors.grey),),
-             const Padding(padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0), child: Text('この物件は、広々としたリビングと日当たりの良いバルコニーが特徴です。静かな住宅街に位置し、近くには公園やショッピング施設があります。詳細は後ほど担当者からご連絡いたします。', textAlign: TextAlign.center, style: TextStyle(fontSize: 16),),),
-             const SizedBox(height: 30),
-             SizedBox(
-               height: 55,
-               child: ElevatedButton.icon(
-                 icon: const Icon(Icons.favorite_border),
-                 label: const Text('この物件に興味あり！'),
-                 onPressed: () => _sendInterestToFirebase(context),
-                 /*style: ElevatedButton.styleFrom(
-                   padding: const EdgeInsets.symmetric(horizontal: 40),
-                   backgroundColor: Theme.of(context).primaryColor, 
-                   foregroundColor: Colors.white, 
-                   textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                   elevation: 5,
-                 ),*/
-               ),
-             ),
-           ],),),),
-   );
- }
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    return Scaffold(
+      appBar: AppBar(title: const Text('物件詳細')),
+      body: Center(child: SingleChildScrollView(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Stack(alignment: Alignment.center, children: [
+                  Hero(tag: 'imageHero', child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(width: screenWidth * 0.9, child: AspectRatio(aspectRatio: 16 / 9,
+                          child: _validImagePaths.isNotEmpty ? Image.asset(_validImagePaths[_currentImageIndex], fit: BoxFit.cover) : const Center(child: Text('表示できる画像がありません。')),),),
+                  ),),
+                  if (_validImagePaths.length > 1) Positioned(left: 10, child: IconButton(onPressed: _goToPreviousImage, icon: const Icon(Icons.arrow_back_ios, size: 40, color: Colors.white70,),),),
+                  if (_validImagePaths.length > 1) Positioned(right: 10, child: IconButton(onPressed: _goToNextImage, icon: const Icon(Icons.arrow_forward_ios, size: 40, color: Colors.white70,),),),
+                ],),
+              const SizedBox(height: 20),
+              Text(_validImagePaths.isNotEmpty ? '${_currentImageIndex + 1} / ${_validImagePaths.length}' : '画像なし', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),),
+              const SizedBox(height: 20),
+              Text('物件ID: $_propertyId', style: const TextStyle(fontSize: 14, color: Colors.grey),),
+              const Padding(padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0), child: Text('この物件は、広々としたリビングと日当たりの良いバルコニーが特徴です。静かな住宅街に位置し、近くには公園やショッピング施設があります。詳細は後ほど担当者からご連絡いたします。', textAlign: TextAlign.center, style: TextStyle(fontSize: 16),),),
+              const SizedBox(height: 30),
+              SizedBox(
+                height: 55,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.favorite_border),
+                  label: const Text('この物件に興味あり！'),
+                  onPressed: () => _sendInterestToFirebase(context),
+                ),
+              ),
+            ],),),),
+    );
+  }
 }
 
 class UserInterestStatusScreen extends StatefulWidget {
@@ -358,23 +341,22 @@ class _UserInterestStatusScreenState extends State<UserInterestStatusScreen> {
       padding: const EdgeInsets.all(16.0),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           // ▼▼▼ ここからが修正後のロジック ▼▼▼
-          // --- セクション1: 日程調整の状況 ---
           _buildSectionHeader('面談の予定', Colors.blue, Icons.calendar_today),
-          StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('schedules')
-                .where('userId', isEqualTo: currentUser!.uid)
-                .orderBy('createdAt', descending: true)
-                .snapshots(),
+          StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance.collection('user_ID').doc(currentUser!.uid).snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return const Card(child: ListTile(title: Text('現在、調整中の面談予定はありません。')));
+              if (!snapshot.hasData || !snapshot.data!.exists) return const Card(child: ListTile(title: Text('現在、調整中の面談予定はありません。')));
               
+              final userData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+              final List<dynamic> userCalendar = userData['UserCalendar'] ?? [];
+              
+              if (userCalendar.isEmpty) return const Card(child: ListTile(title: Text('現在、調整中の面談予定はありません。')));
+
               return Column(
-                children: snapshot.data!.docs.map((doc) {
-                  final schedule = doc.data() as Map<String, dynamic>;
+                children: userCalendar.map((scheduleData) {
+                  final schedule = scheduleData as Map<String, dynamic>;
                   final status = schedule['status'] ?? 'unknown';
-                  // ステータスに応じて表示を変える
                   if (status == 'confirmed') return _buildConfirmedCard(schedule);
                   if (status == 'rejected') return _buildRescheduleCard(schedule);
                   return _buildRequestedCard(schedule);
@@ -383,7 +365,6 @@ class _UserInterestStatusScreenState extends State<UserInterestStatusScreen> {
             },
           ),
           
-          // --- セクション2: 承認された物件 ---
           _buildSectionHeader('承認された物件', Colors.green, Icons.check_circle),
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance.collection('properties').where('user_license', arrayContains: currentUser!.uid).snapshots(),
@@ -414,7 +395,6 @@ class _UserInterestStatusScreenState extends State<UserInterestStatusScreen> {
             },
           ),
           
-          // --- セクション3: 返答待ちの物件 ---
           _buildSectionHeader('「興味あり」返答待ち', Colors.orange, Icons.hourglass_top),
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance.collection('properties').where('userHope', arrayContains: currentUser!.uid).snapshots(),
