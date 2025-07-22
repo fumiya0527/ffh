@@ -120,19 +120,14 @@ class _MainScreenState extends State<MainScreen> {
   List<Map<String, dynamic>> _matchingProperties = [];
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-<<<<<<< HEAD
-  final List<List<List<String>>> propertyImages = [
-    [['assets/homedate1.jpg', 'assets/homedate1_1.jpg'] ,['AgTYUY0aPXHsVt9Wpmjl']],
-    [['assets/homedate2.jpg', 'assets/homedate2_2.jpg'],[ 'UYhCХEd5qR0tCsG3o2РС']],
-    [['assets/homedate3.jpg', 'assets/homedate3_1.jpg'],[ 'twWytYCGkUhpHnfpvZQf']],
-=======
+
 
   // ▼▼▼ 1. 元のダミーデータを「写真だけのテンプレート」として用意 ▼▼▼
   final List<List<String>> _imageTemplates = [
     ['assets/homedate1.jpg', 'assets/homedate1_1.jpg'],
     ['assets/homedate2.jpg', 'assets/homedate2_2.jpg'],
     ['assets/homedate3.jpg', 'assets/homedate3_1.jpg'],
->>>>>>> 7d7a35774021feca97c0fb6755b921397cb53efb
+
   ];
 
   // ▼▼▼ 2. 実際に画面に表示するための、IDが紐付いたリストを新しく用意 ▼▼▼
@@ -296,6 +291,18 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
+
+  int _getRankForDistance(String? distance) {
+  if (distance == null) return 999; // データがない場合は最も不利なランクに
+  const distanceRank = {
+    '1分以内': 1,
+    '5分以内': 5,
+    '10分以内': 10,
+    '15分以内': 15,
+    '20分以上': 20,
+  };
+  return distanceRank[distance] ?? 999; // マップにない場合も不利なランクに
+}
 
 class DetailScreen extends StatefulWidget {
   final List<List<String>> propertyData; 
