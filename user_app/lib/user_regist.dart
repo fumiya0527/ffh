@@ -428,7 +428,8 @@ class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
                 // 話せる言語選択
                 MultiSelectDialogField<String>(
                   items: languages.map((lang) => MultiSelectItem(lang, lang)).toList(),
-                  title: const Text("話せる言語を選んでください (Select languages you speak)"),
+                  itemsTextStyle: GoogleFonts.notoSansJp(),
+                  title:  Text("話せる言語を選んでください (Select languages you speak)"),
                   buttonText: const Text("言語"),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey.shade400),

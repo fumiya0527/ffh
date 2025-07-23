@@ -202,7 +202,7 @@ class _QuizScreenState extends State<QuizScreen> {
     QuizQuestion(
       questionText: 'Q1: 22時に家でしていいことはどれ？ (What is ok to do at home at 10pm?)',
       options: ['A) 掃除機 (Vacuuming)', 'B) パーティー (Party)', 'C) ゲーム (Playing games)'],
-      correctAnswer: 'C) ゲーム (Playing games) ',
+      correctAnswer: 'C) ゲーム (Playing games)',
     ),
     QuizQuestion(
       questionText: 'Q2: 生ごみとまとめた新聞紙を一緒に出して良いか？ (Can I put out food waste and bundled newspapers together?)',
