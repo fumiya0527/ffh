@@ -30,7 +30,7 @@ class AddPropertyScreen extends StatelessWidget {
         label: const Text('新しい物件を登録する'),
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-          backgroundColor: Colors.green,
+          //backgroundColor: Colors.green,
           foregroundColor: Colors.white,
           textStyle: const TextStyle(fontSize: 18),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),

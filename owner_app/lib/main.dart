@@ -33,13 +33,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     // ユーザーアプリと共通のデザイン定義
     const Color mainBackgroundColor = Color(0xFFEFF7F6);
-    final Color mainColor = Colors.teal[800]!;
+    final Color mainColor = Colors.purple[800]!;
 
     return MaterialApp(
       title: 'オーナー向け物件アプリ',
       theme: ThemeData(
         // --- 基本設定 ---
-        primarySwatch: Colors.teal,
+        primarySwatch: Colors.purple,
         scaffoldBackgroundColor: mainBackgroundColor,
         
         // --- フォント設定 ---

@@ -284,7 +284,9 @@ class _OwnerPersonalInfoScreenState extends State<OwnerPersonalInfoScreen> {
               child: OutlinedButton.icon(
                 icon: const Icon(Icons.person_search),
                 label: const Text('ユーザーの詳細を見る'),
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.teal, side: const BorderSide(color: Colors.teal)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Theme.of(context).primaryColor,
+                  side: BorderSide(color: Theme.of(context).primaryColor)),
                 onPressed: () {
                   Navigator.push(
                     context,
