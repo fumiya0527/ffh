@@ -5,6 +5,8 @@ import 'user_condition.dart'; // UserCondition へのパス
 import 'terms_of_service.dart'; // terms_of_service.dart へのパス
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'main.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class UserRegistrationScreen extends StatefulWidget {
   @override

@@ -63,7 +63,6 @@ class _UserConditionState extends State<UserCondition> {
     'バス・トイレ別 (Separate Bath/Toilet)', 'エアコン付き', 'オートロック (Auto-lock)',
     'ペット可 (Pet-friendly)', 'インターネット無料', '駐車場あり (Parking available)',
     '畳なし (No Tatami rooms)', 'IHコンロ (IH Cooktop)', 'バルコニーあり (Balcony available)',
-    'バルコニーなし (No Balcony)',
   ];
 
   // 築年数の選択肢

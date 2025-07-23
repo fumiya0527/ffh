@@ -150,7 +150,7 @@ class _PropertyRegistrationScreenState extends State<PropertyRegistrationScreen>
     {'title': 'ペット可', 'checked': false},
     {'title': 'インターネット無料', 'checked': false},
     {'title': '駐車場あり', 'checked': false},
-    {'title': '和室', 'checked': false},
+    {'title': '畳なし', 'checked': false},
     {'title': 'IHコンロ', 'checked': false},
     {'title': 'バルコニーあり', 'checked': false},
   ];
