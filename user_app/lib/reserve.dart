@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'house_select.dart';
+import 'areaselector.dart';
+import 'user_condition.dart';
+import 'user_regist.dart';
 
 class ScheduleRequestScreen extends StatefulWidget {
   final String propertyId;
@@ -137,14 +141,14 @@ class _ScheduleRequestScreenState extends State<ScheduleRequestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('面談の希望日時を選択')),
+      appBar: AppBar(title: const Text('面談の希望日時を選択 (Select Interview Times)')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             Expanded(
               child: _selectedSlots.isEmpty
-                  ? const Center(child: Text('下のボタンから希望日時を追加してください。\n(最大3つまで)'))
+                  ? const Center(child: Text('下のボタンから希望日時を追加してください。\n(最大3つまで)\n\nPlease add desired times from the button below.\n(Up to 3 slots available)'))
                   : ListView.builder(
                       itemCount: _selectedSlots.length,
                       itemBuilder: (context, index) {
@@ -169,7 +173,7 @@ class _ScheduleRequestScreenState extends State<ScheduleRequestScreen> {
               width: double.infinity,
               child: OutlinedButton.icon(
                 icon: const Icon(Icons.add),
-                label: const Text('希望日時を追加'),
+                label: const Text('希望日時を追加 (Add a time slot)'),
                 style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 15)),
                 onPressed: _selectedSlots.length < 3 && !_isLoading ? _pickDateTime : null,
               ),
@@ -182,7 +186,7 @@ class _ScheduleRequestScreenState extends State<ScheduleRequestScreen> {
                 onPressed: _isLoading ? null : _submitScheduleRequest,
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('この内容で希望を送信'),
+                    : const Text('この内容で希望を送信 (Send Request)'),
               ),
             ),
           ],

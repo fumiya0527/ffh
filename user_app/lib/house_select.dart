@@ -28,10 +28,16 @@ class AppRootScreen extends StatefulWidget {
 class _AppRootScreenState extends State<AppRootScreen> {
   int _selectedIndex = 0;
   
-  static const List<String> _widgetTitles = <String>[
+  /*static const List<String> _widgetTitles = <String>[
     '物件一覧',
     'あなたの状況',
     '設定',
+  ];*/
+
+  static final List<Widget> _widgetTitles = <Widget>[
+    _buildTitle('Property List', '物件一覧'),
+    _buildTitle('Your Status', 'あなたの状況'),
+    _buildTitle('Manners Guide', 'マナー資料'),
   ];
 
   static const List<Widget> _widgetOptions = <Widget>[
@@ -44,6 +50,17 @@ class _AppRootScreenState extends State<AppRootScreen> {
     setState(() {
       _selectedIndex = index;
     });
+  }
+  //これが追加点
+  static Widget _buildTitle(String subtitle, String title) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(subtitle, style: const TextStyle(fontSize: 14, color: Colors.white70)),
+        const SizedBox(height: 2),
+        Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+      ],
+    );
   }
 
   Future<void> _logout(BuildContext context) async {
@@ -82,7 +99,8 @@ class _AppRootScreenState extends State<AppRootScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_widgetTitles.elementAt(_selectedIndex)),
+        title: _widgetTitles.elementAt(_selectedIndex),//Text(_widgetTitles.elementAt(_selectedIndex)),
+        centerTitle: false, // ★ 追加: 左寄せにする
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -95,9 +113,9 @@ class _AppRootScreenState extends State<AppRootScreen> {
       body: _widgetOptions.elementAt(_selectedIndex),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: '物件を見る'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'あなたの状況'),
-          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'マナー資料'),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: '物件を見る Properties'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'あなたの状況 Your Status'),
+          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'マナー資料 Manners'),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: mainColor,
@@ -255,8 +273,8 @@ class _MainScreenState extends State<MainScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildNavButton(Icons.arrow_back, '前の物件へ', () => setState(() => currentIndex = (currentIndex + _displayableProperties.length - 1) % _displayableProperties.length)),
-                    _buildNavButton(Icons.arrow_forward, '次の物件へ', () => setState(() => currentIndex = (currentIndex + 1) % _displayableProperties.length)),
+                    _buildNavButton(Icons.arrow_back, 'Previous', '前の物件へ', () => setState(() => currentIndex = (currentIndex + _displayableProperties.length - 1) % _displayableProperties.length)),
+                    _buildNavButton(Icons.arrow_forward, 'Next', '次の物件へ', () => setState(() => currentIndex = (currentIndex + 1) % _displayableProperties.length)),
                   ],
                 ),
               ] else ...[
@@ -264,10 +282,11 @@ class _MainScreenState extends State<MainScreen> {
               ],
 
               const Divider(height: 40),
+              Text('Properties that match you', style: TextStyle(fontSize: 14, color: mainColor.withOpacity(0.8))),
               Text('あなたに合致する物件', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: mainColor)),
               const SizedBox(height: 8),
               _matchingProperties.isEmpty
-                  ? const Center(child: Padding(padding: EdgeInsets.symmetric(vertical: 32.0), child: Text('該当する物件はありません。')))
+                  ? const Center(child: Padding(padding: EdgeInsets.symmetric(vertical: 32.0), child: Text('該当する物件はありません。\n(No matching properties found.')))
                   : ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -292,17 +311,21 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildNavButton(IconData icon, String label, VoidCallback onPressed) {
-    return SizedBox(height: 55, child: ElevatedButton.icon(icon: Icon(icon), label: Text(label), onPressed: onPressed));
+  Widget _buildNavButton(IconData icon, String sublabel, String mainLabel, VoidCallback onPressed) {
+    return SizedBox(height: 55, child: ElevatedButton.icon(icon: Icon(icon), label: Text(sublabel), onPressed: onPressed));
   }
 }
 
-  Widget _buildNavButton(IconData icon, String label, VoidCallback onPressed) {
+  Widget _buildNavButton(IconData icon, String sublabel, String mainLabel, VoidCallback onPressed) {
     return SizedBox(
       height: 55,
       child: ElevatedButton.icon(
         icon: Icon(icon),
-        label: Text(label),
+        label: Column(mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(sublabel, style: const TextStyle(fontSize: 12)),
+              Text(mainLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
+            ],),
         onPressed: onPressed,
       ),
     );
@@ -348,6 +371,30 @@ class _DetailScreenState extends State<DetailScreen> {
   late List<String> _imagePaths;
   late String _propertyId;
 
+  //追加
+  Widget _buildDetailRow(String label, String value, String subLabel) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(subLabel, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 16))),
+        ],
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -374,7 +421,7 @@ class _DetailScreenState extends State<DetailScreen> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
-      appBar: AppBar(title: const Text('物件詳細')),
+      appBar: AppBar(title: _AppRootScreenState._buildTitle('Property Details', '物件詳細'),centerTitle: false),
       body: Center(child: SingleChildScrollView(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
               Stack(alignment: Alignment.center, children: [
                   Hero(tag: 'imageHero', child: ClipRRect(
@@ -437,19 +484,13 @@ class _DetailScreenState extends State<DetailScreen> {
                             ),
                           ),
                           const SizedBox(height: 24),
-                          Text('家賃: ${currencyFormatter.format(rent)}円', style: const TextStyle(fontSize: 18)),
-                          const SizedBox(height: 8),
-                          // ★city, town, streetAddress を連結して表示
-                          Text('住所: $city$town$streetAddress', style: const TextStyle(fontSize: 18)),
-                          const SizedBox(height: 8),
-                          Text('間取り: $floorPlan', style: const TextStyle(fontSize: 18)),
-                          const SizedBox(height: 8),
-                          Text('築年数: $buildingAge', style: const TextStyle(fontSize: 18)),
-                          const SizedBox(height: 8),
-                          Text('駅からの距離: $distanceToStation', style: const TextStyle(fontSize: 18)),
-                          const SizedBox(height: 16),
-                          const Text('設備:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                          Text(amenities, style: const TextStyle(fontSize: 16)),
+                          _buildDetailRow('Rent', '${currencyFormatter.format(rent)}円', '家賃'),
+                          _buildDetailRow('Address', '$city$town$streetAddress', '住所'),
+                          _buildDetailRow('Layout', floorPlan, '間取り'),
+                          _buildDetailRow('Age', buildingAge, '築年数'),
+                          _buildDetailRow('From Station', distanceToStation, '駅からの距離'),
+                          const SizedBox(height: 10),
+                          _buildDetailRow('Amenities', amenities, '設備'),
                         ],
                       ),
                     );
@@ -465,7 +506,14 @@ class _DetailScreenState extends State<DetailScreen> {
                 height: 55,
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.favorite_border),
-                  label: const Text('この物件に興味あり！'),
+                  // ★ 変更点: ボタンのラベルを多言語化
+                  label: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Text("I'm interested!", style: TextStyle(fontSize: 12)),
+                      Text('この物件に興味あり！'),
+                    ],
+                  ),
                   onPressed: () => _sendInterestToFirebase(context),
                 ),
               ),
@@ -486,23 +534,23 @@ class _UserInterestStatusScreenState extends State<UserInterestStatusScreen> {
   @override
   Widget build(BuildContext context) {
     if (currentUser == null) {
-      return const Center(child: Text('ログインが必要です。'));
+      return const Center(child: Text('ログインが必要です。Need login'));
     }
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           // ▼▼▼ ここからが修正後のロジック ▼▼▼
-          _buildSectionHeader('面談の予定', Colors.blue, Icons.calendar_today),
+          _buildSectionHeader('面談の予定、Interview schedule', Colors.blue, Icons.calendar_today),
           StreamBuilder<DocumentSnapshot>(
             stream: FirebaseFirestore.instance.collection('user_ID').doc(currentUser!.uid).snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-              if (!snapshot.hasData || !snapshot.data!.exists) return const Card(child: ListTile(title: Text('現在、調整中の面談予定はありません。')));
+              if (!snapshot.hasData || !snapshot.data!.exists) return const Card(child: ListTile(title: Text('現在、調整中の面談予定はありません。No interviews scheduled')));
               
               final userData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
               final List<dynamic> userCalendar = userData['UserCalendar'] ?? [];
               
-              if (userCalendar.isEmpty) return const Card(child: ListTile(title: Text('現在、調整中の面談予定はありません。')));
+              if (userCalendar.isEmpty) return const Card(child: ListTile(title: Text('現在、調整中の面談予定はありません。 No interviews scheduled')));
 
               return Column(
                 children: userCalendar.map((scheduleData) {
@@ -516,12 +564,12 @@ class _UserInterestStatusScreenState extends State<UserInterestStatusScreen> {
             },
           ),
           
-          _buildSectionHeader('承認された物件', Colors.green, Icons.check_circle),
+          _buildSectionHeader('承認された物件 Approved property', Colors.green, Icons.check_circle),
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance.collection('properties').where('user_license', arrayContains: currentUser!.uid).snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return const Card(child: ListTile(title: Text('承認された物件はまだありません。')));
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return const Card(child: ListTile(title: Text('承認された物件はまだありません。 No properties approved')));
               return Column(children: snapshot.data!.docs.map((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   return Card(child: ListTile(
@@ -535,7 +583,7 @@ class _UserInterestStatusScreenState extends State<UserInterestStatusScreen> {
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                           ),
-                          child: const Text('日程調整へ'),
+                          child: const Text('日程調整へ schedule adjustment'),
                           onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ScheduleRequestScreen(propertyId: doc.id, ownerId: data['ownerId']))),
                         ),
                       ),
@@ -546,7 +594,7 @@ class _UserInterestStatusScreenState extends State<UserInterestStatusScreen> {
             },
           ),
           
-          _buildSectionHeader('「興味あり」返答待ち', Colors.orange, Icons.hourglass_top),
+          _buildSectionHeader('「興味あり」返答待ち Waiting for reply', Colors.orange, Icons.hourglass_top),
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance.collection('properties').where('userHope', arrayContains: currentUser!.uid).snapshots(),
             builder: (context, snapshot) {
@@ -746,3 +794,4 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 }
+
